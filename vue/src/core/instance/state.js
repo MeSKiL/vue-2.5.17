@@ -36,13 +36,17 @@ const sharedPropertyDefinition = {
 }
 
 export function proxy (target: Object, sourceKey: string, key: string) {
-  sharedPropertyDefinition.get = function proxyGetter () {
+  sharedPropertyDefinition.get = function proxyGetter () { // 定义了sharedPropertyDefinition的get和set
     return this[sourceKey][key]
   }
   sharedPropertyDefinition.set = function proxySetter (val) {
     this[sourceKey][key] = val
   }
-  Object.defineProperty(target, key, sharedPropertyDefinition)
+  Object.defineProperty(target, key, sharedPropertyDefinition) // target的key上有get和set
+  // 当访问vm.key就等于访问vm.sourceKey.key，当调用this.message的时候，如果message是在data里声明的，实际上访问了this._data.message
+  // 这也就是给vm._data赋值的原因
+
+  // methods和props同理
 }
 
 export function initState (vm: Component) {
@@ -50,7 +54,7 @@ export function initState (vm: Component) {
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props) // 有props就初始化props
   if (opts.methods) initMethods(vm, opts.methods) // 有methods就初始化methods
-  if (opts.data) {
+  if (opts.data) { // 如果有data就初始化data，没有就初始化空
     initData(vm)
   } else {
     observe(vm._data = {}, true /* asRootData */)
@@ -110,12 +114,12 @@ function initProps (vm: Component, propsOptions: Object) {
 }
 
 function initData (vm: Component) {
-  let data = vm.$options.data
-  data = vm._data = typeof data === 'function'
+  let data = vm.$options.data // 在$options.data中获取data
+  data = vm._data = typeof data === 'function' // 是否是function
     ? getData(data, vm)
-    : data || {}
+    : data || {} // 否则就是data||{}，并且给vm._data也赋值一份
   if (!isPlainObject(data)) {
-    data = {}
+    data = {} // 如果不是对象就，data就为空，并且在开发环境报警告
     process.env.NODE_ENV !== 'production' && warn(
       'data functions should return an object:\n' +
       'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function',
@@ -123,39 +127,39 @@ function initData (vm: Component) {
     )
   }
   // proxy data on instance
-  const keys = Object.keys(data)
-  const props = vm.$options.props
-  const methods = vm.$options.methods
+  const keys = Object.keys(data) // 拿到data的key
+  const props = vm.$options.props // 拿到props的key
+  const methods = vm.$options.methods // 拿到methods的key
   let i = keys.length
-  while (i--) {
+  while (i--) { // data上的key不能在props或者methods上出现
     const key = keys[i]
     if (process.env.NODE_ENV !== 'production') {
-      if (methods && hasOwn(methods, key)) {
+      if (methods && hasOwn(methods, key)) { // 如果methods上有data的key就警告
         warn(
           `Method "${key}" has already been defined as a data property.`,
           vm
         )
       }
     }
-    if (props && hasOwn(props, key)) {
+    if (props && hasOwn(props, key)) { // 如果props上有data的key就警告
       process.env.NODE_ENV !== 'production' && warn(
         `The data property "${key}" is already declared as a prop. ` +
         `Use prop default value instead.`,
         vm
       )
     } else if (!isReserved(key)) {
-      proxy(vm, `_data`, key)
+      proxy(vm, `_data`, key) // 将每个this.key（data里的key）都代理到this._data.key上
     }
   }
   // observe data
-  observe(data, true /* asRootData */)
+  observe(data, true /* asRootData */) // 响应式处理
 }
 
 export function getData (data: Function, vm: Component): any {
   // #7573 disable dep collection when invoking data getters
   pushTarget()
   try {
-    return data.call(vm, vm)
+    return data.call(vm, vm) // 是函数就调用这个函数，并返回结果对象
   } catch (e) {
     handleError(e, vm, `data()`)
     return {}
@@ -254,14 +258,14 @@ function initMethods (vm: Component, methods: Object) {
   const props = vm.$options.props
   for (const key in methods) {
     if (process.env.NODE_ENV !== 'production') {
-      if (methods[key] == null) {
+      if (methods[key] == null) { // 为空就警告
         warn(
           `Method "${key}" has an undefined value in the component definition. ` +
           `Did you reference the function correctly?`,
           vm
         )
       }
-      if (props && hasOwn(props, key)) {
+      if (props && hasOwn(props, key)) { // props里不能有一样key的属性，因为initProps在前
         warn(
           `Method "${key}" has already been defined as a prop.`,
           vm
