@@ -83,7 +83,11 @@ export function renderMixin (Vue: Class<Component>) {
       vnode = render.call(vm._renderProxy, vm.$createElement) // 所以render函数的参数是createElement方法
       // renderProxy在生产环境就是vm，在开发环境是有警告的vm
       // vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
-
+      // 执行 vm.render(vw.$createElement)
+    /*  import App from './App.vue'
+      render(h=>{h(APP)})
+      相当于
+      createElement(APP)*/
     } catch (e) {
       handleError(e, vm, `render`)
       // return error render result,

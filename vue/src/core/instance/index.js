@@ -14,6 +14,8 @@ function Vue (options) { // 代码清晰明了
   this._init(options)
 }
 
+// new Vue => init => $mount => compile(template) => render => vnode =>(update) patch => dom
+
 // 往vue原型上挂载方法,先挂方法，后init
 initMixin(Vue)
 stateMixin(Vue)

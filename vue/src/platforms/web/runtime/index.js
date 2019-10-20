@@ -31,7 +31,7 @@ extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
-Vue.prototype.__patch__ = inBrowser ? patch : noop
+Vue.prototype.__patch__ = inBrowser ? patch : noop // 浏览器环境才有patch,服务端没有dom所以patch是空函数
 
 // public mount method
 Vue.prototype.$mount = function ( // 这个时候render update已经挂好了

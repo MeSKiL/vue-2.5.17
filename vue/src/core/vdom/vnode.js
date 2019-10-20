@@ -70,7 +70,7 @@ export default class VNode {
   }
 }
 
-export const createEmptyVNode = (text: string = '') => {
+export const createEmptyVNode = (text: string = '') => { // 创建一个空的VNode
   const node = new VNode()
   node.text = text
   node.isComment = true

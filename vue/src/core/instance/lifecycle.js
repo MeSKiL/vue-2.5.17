@@ -17,6 +17,7 @@ import {
   emptyObject,
   validateProp
 } from '../util/index'
+// import {patch} from "../../platforms/web/runtime/patch";
 
 export let activeInstance: any = null
 export let isUpdatingChildComponent: boolean = false
@@ -48,7 +49,7 @@ export function initLifecycle (vm: Component) {
 }
 
 export function lifecycleMixin (Vue: Class<Component>) {
-  Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
+  Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) { // 首次渲染，把vnode映射成真实的dom。   当数据改变，影响视图变化，也会调用
     const vm: Component = this
     const prevEl = vm.$el
     const prevVnode = vm._vnode
@@ -57,9 +58,12 @@ export function lifecycleMixin (Vue: Class<Component>) {
     vm._vnode = vnode
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
-    if (!prevVnode) {
+    if (!prevVnode) { // prevVnode是更新用的，所以一开始是空
       // initial render
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
+      // Vue.prototype.__patch__ = inBrowser ? patch : noop 在runtime/index下定义
+      // vm.$el 首次传入的是真实的dom
+      // 第二个是渲染生产的 vm._render() vnode
     } else {
       // updates
       vm.$el = vm.__patch__(prevVnode, vnode)
