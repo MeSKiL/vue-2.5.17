@@ -14,6 +14,8 @@ import { queueWatcher } from './scheduler'
 import Dep, { pushTarget, popTarget } from './dep'
 
 import type { SimpleSet } from '../util/index'
+import {noop} from "../util/debug";
+import {callHook} from "../instance/lifecycle";
 
 let uid = 0
 
@@ -47,22 +49,36 @@ export default class Watcher {
     expOrFn: string | Function,
     cb: Function,
     options?: ?Object,
-    isRenderWatcher?: boolean
+    isRenderWatcher?: boolean // 是否是渲染watch
+    // render 情况
+/*    1.vm
+      2.updateComponent
+      3.noop
+      4.{
+          before(){
+            if(vm._isMounted){
+              callHook(vm.'beforeUpdate')
+            }
+          }
+        }
+      5.true */
+
   ) {
     this.vm = vm
-    if (isRenderWatcher) {
+    if (isRenderWatcher) { // 如果是渲染watch就在vm上加上_watch
       vm._watcher = this
     }
-    vm._watchers.push(this)
+    vm._watchers.push(this) // 并且把this放入watchers
     // options
     if (options) {
+      // options存在就赋值
       this.deep = !!options.deep
       this.user = !!options.user
       this.computed = !!options.computed
       this.sync = !!options.sync
       this.before = options.before
     } else {
-      this.deep = this.user = this.computed = this.sync = false
+      this.deep = this.user = this.computed = this.sync = false // 否则给默认值
     }
     this.cb = cb
     this.id = ++uid // uid for batching
@@ -74,11 +90,11 @@ export default class Watcher {
     this.newDepIds = new Set()
     this.expression = process.env.NODE_ENV !== 'production'
       ? expOrFn.toString()
-      : ''
+      : '' // 开发环境expression就是expOrFn toString，仅仅是开发环境下可以看到expression
     // parse expression for getter
-    if (typeof expOrFn === 'function') {
+    if (typeof expOrFn === 'function') { // 如果是函数，那实例上的getter就是这个函数
       this.getter = expOrFn
-    } else {
+    } else { // 否则会调用parsePath(expOrFn)
       this.getter = parsePath(expOrFn)
       if (!this.getter) {
         this.getter = function () {}
@@ -106,7 +122,7 @@ export default class Watcher {
     let value
     const vm = this.vm
     try {
-      value = this.getter.call(vm, vm)
+      value = this.getter.call(vm, vm) // 调用getter
     } catch (e) {
       if (this.user) {
         handleError(e, vm, `getter for watcher "${this.expression}"`)

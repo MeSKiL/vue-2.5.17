@@ -14,7 +14,7 @@ function Vue (options) { // 代码清晰明了
   this._init(options)
 }
 
-// 往vue原型上挂载方法
+// 往vue原型上挂载方法,先挂方法，后init
 initMixin(Vue)
 stateMixin(Vue)
 eventsMixin(Vue)

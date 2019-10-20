@@ -34,12 +34,18 @@ extend(Vue.options.components, platformComponents)
 Vue.prototype.__patch__ = inBrowser ? patch : noop
 
 // public mount method
-Vue.prototype.$mount = function (
+Vue.prototype.$mount = function ( // 这个时候render update已经挂好了
   el?: string | Element,
   hydrating?: boolean
 ): Component {
+  // 由于runtime only 版本的$mount执行到这里就完了，所以不像runtime compiler，还会判断el，所以这里也做了对el的判断
   el = el && inBrowser ? query(el) : undefined
-  return mountComponent(this, el, hydrating)
+  return mountComponent(this, el, hydrating) // 返回mountComponent方法的返回值，Component类型的vm
+/*  (
+      vm: Component,
+      el: ?Element,
+      hydrating?: boolean
+): Component*/
 }
 
 // devtools global hook

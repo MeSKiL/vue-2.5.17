@@ -131,15 +131,15 @@ export function lifecycleMixin (Vue: Class<Component>) {
   }
 }
 
-export function mountComponent (
+export function mountComponent ( // 定义了updateComponent函数
   vm: Component,
   el: ?Element,
   hydrating?: boolean
 ): Component {
-  vm.$el = el
-  if (!vm.$options.render) {
-    vm.$options.render = createEmptyVNode
-    if (process.env.NODE_ENV !== 'production') {
+  vm.$el = el // vm.$el赋值为el
+  if (!vm.$options.render) { // 如果没有render，并且template也没有转换成render
+    vm.$options.render = createEmptyVNode // 就创建一个空的VNode，并且报警告
+    if (process.env.NODE_ENV !== 'production') { // 一般是使用了runtime-Only的版本，但是又使用了template,没有正确的render函数
       /* istanbul ignore if */
       if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
         vm.$options.el || el) {
@@ -157,11 +157,12 @@ export function mountComponent (
       }
     }
   }
-  callHook(vm, 'beforeMount')
+  callHook(vm, 'beforeMount') // 发布订阅模式
 
-  let updateComponent
+  let updateComponent // 定义了updateComponent方法
   /* istanbul ignore if */
-  if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
+  if (process.env.NODE_ENV !== 'production' && config.performance && mark) { // 如果是开发环境并且配置了config.performance和mark
+    // mark 性能埋点，检测性能 todo
     updateComponent = () => {
       const name = vm._name
       const id = vm._uid
@@ -179,7 +180,8 @@ export function mountComponent (
       measure(`vue ${name} patch`, startTag, endTag)
     }
   } else {
-    updateComponent = () => {
+    updateComponent = () => { // 这个方法是一个渲染watcher 实际上就是执行了一次渲染，除了首次，更新数据都会触发watch，就会执行
+      // updateComponent就是vm._update,第一个参数是vm._render()后生成的vm，hydrating csr为false
       vm._update(vm._render(), hydrating)
     }
   }
@@ -187,7 +189,8 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
-  new Watcher(vm, updateComponent, noop, {
+  new Watcher(vm, updateComponent, noop, { // 渲染watcher
+    // todo 监听当更新的时候先调用before然后执行updateComponent更新，new的时候并没有走before。new的时候也不该走before
     before () {
       if (vm._isMounted) {
         callHook(vm, 'beforeUpdate')

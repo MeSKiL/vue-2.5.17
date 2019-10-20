@@ -15,7 +15,7 @@ import VNode, { createEmptyVNode } from '../vdom/vnode'
 
 import { isUpdatingChildComponent } from './lifecycle'
 
-export function initRender (vm: Component) {
+export function initRender (vm: Component) { // init的时候会指定initRender
   vm._vnode = null // the root of the child tree
   vm._staticTrees = null // v-once cached trees
   const options = vm.$options
@@ -27,10 +27,10 @@ export function initRender (vm: Component) {
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
   // internal version is used by render functions compiled from templates
-  vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)
+  vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false) // 被编译生成的render的createElement方法
   // normalization is always applied for the public version, used in
   // user-written render functions.
-  vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
+  vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true) // 手写render提供创建vnode方法
 
   // $attrs & $listeners are exposed for easier HOC creation.
   // they need to be reactive so that HOCs using them are always updated
@@ -60,7 +60,7 @@ export function renderMixin (Vue: Class<Component>) {
 
   Vue.prototype._render = function (): VNode {
     const vm: Component = this
-    const { render, _parentVnode } = vm.$options
+    const { render, _parentVnode } = vm.$options // 从$options拿到render
 
     // reset _rendered flag on slots for duplicate slot check
     if (process.env.NODE_ENV !== 'production') {
@@ -80,7 +80,10 @@ export function renderMixin (Vue: Class<Component>) {
     // render self
     let vnode
     try {
-      vnode = render.call(vm._renderProxy, vm.$createElement)
+      vnode = render.call(vm._renderProxy, vm.$createElement) // 所以render函数的参数是createElement方法
+      // renderProxy在生产环境就是vm，在开发环境是有警告的vm
+      // vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)
+
     } catch (e) {
       handleError(e, vm, `render`)
       // return error render result,
@@ -102,9 +105,9 @@ export function renderMixin (Vue: Class<Component>) {
       }
     }
     // return empty vnode in case the render function errored out
-    if (!(vnode instanceof VNode)) {
+    if (!(vnode instanceof VNode)) { // 如果vnode不是VNode实例
       if (process.env.NODE_ENV !== 'production' && Array.isArray(vnode)) {
-        warn(
+        warn( // 有多个根节点
           'Multiple root nodes returned from render function. Render function ' +
           'should return a single root node.',
           vm
