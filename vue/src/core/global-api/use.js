@@ -2,7 +2,7 @@
 
 import { toArray } from '../util/index'
 
-export function initUse (Vue: GlobalAPI) {
+export function initUse (Vue: GlobalAPI) { // initGlobalAPI中调用
   Vue.use = function (plugin: Function | Object) {
     const installedPlugins = (this._installedPlugins || (this._installedPlugins = []))
     if (installedPlugins.indexOf(plugin) > -1) {

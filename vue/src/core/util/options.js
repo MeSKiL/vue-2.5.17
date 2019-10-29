@@ -136,10 +136,10 @@ function mergeHook (
   parentVal: ?Array<Function>,
   childVal: ?Function | ?Array<Function>
 ): ?Array<Function> {
-  return childVal
+  return childVal // 如果child中没有这个hook，直接取parent中的hook
     ? parentVal
-      ? parentVal.concat(childVal)
-      : Array.isArray(childVal)
+      ? parentVal.concat(childVal)// 如果child定义了 parent也定义了，就合并parent和child中的这个hook
+      : Array.isArray(childVal) // 如果child定义了 parent没有定义，就判断childVal是不是数组，如果是就直接返回，不是就返回[childVal]
         ? childVal
         : [childVal]
     : parentVal
@@ -148,6 +148,20 @@ function mergeHook (
 LIFECYCLE_HOOKS.forEach(hook => {
   strats[hook] = mergeHook
 })
+// 这些声明周期的合并策略是
+// export const LIFECYCLE_HOOKS = [
+//   'beforeCreate',
+//   'created',
+//   'beforeMount',
+//   'mounted',
+//   'beforeUpdate',
+//   'updated',
+//   'beforeDestroy',
+//   'destroyed',
+//   'activated',
+//   'deactivated',
+//   'errorCaptured'
+// ]
 
 /**
  * Assets
@@ -362,12 +376,12 @@ function assertObjectType (name: string, value: any, vm: ?Component) {
  * Merge two option objects into a new one.
  * Core utility used in both instantiation and inheritance.
  */
-export function mergeOptions (
+export function mergeOptions ( // 将child和parent合并
   parent: Object,
   child: Object,
   vm?: Component
 ): Object {
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production') { // 检测child中components的名字是否符合规则
     checkComponents(child)
   }
 
@@ -379,26 +393,29 @@ export function mergeOptions (
   normalizeInject(child, vm)
   normalizeDirectives(child)
   const extendsFrom = child.extends
-  if (extendsFrom) {
+  if (extendsFrom) { // 如果定义了extends，就递归调用mergeOptions
     parent = mergeOptions(parent, extendsFrom, vm)
   }
-  if (child.mixins) {
+  if (child.mixins) { // 如果child有mixins也递归调用mergeOptions
     for (let i = 0, l = child.mixins.length; i < l; i++) {
       parent = mergeOptions(parent, child.mixins[i], vm)
     }
-  }
+  } // extends与mixins是类似的
   const options = {}
   let key
   for (key in parent) {
     mergeField(key)
-  }
+  } // key再parent就调用mergeField
   for (key in child) {
+    // key再child中并且不在parent中，调用mergeField
     if (!hasOwn(parent, key)) {
       mergeField(key)
     }
   }
   function mergeField (key) {
     const strat = strats[key] || defaultStrat
+    // strats定义了很多合并策略,不同的key有不同的合并策略
+    // default child不为空就选用child的，不然用parent的
     options[key] = strat(parent[key], child[key], vm, key)
   }
   return options

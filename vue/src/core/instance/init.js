@@ -38,7 +38,7 @@ export function initMixin (Vue: Class<Component>) { // instance/index
       initInternalComponent(vm, options) // 设置了vm.$options
     } else {
       vm.$options = mergeOptions( // 可以通过$options获取到options
-        resolveConstructorOptions(vm.constructor),
+        resolveConstructorOptions(vm.constructor), // 这种情况就是Vue.options，在init中初始化
         options || {},
         vm
       )
@@ -77,6 +77,7 @@ export function initMixin (Vue: Class<Component>) { // instance/index
 }
 
 export function initInternalComponent (vm: Component, options: InternalComponentOptions) { // 在组件的_init中执行
+  // 组建内部合并options
   const opts = vm.$options = Object.create(vm.constructor.options) // 将vm的constructor的options创建成一个对象赋值给$options
   // doing this because it's faster than dynamic enumeration.
 
@@ -110,7 +111,7 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   }
 }
 
-export function resolveConstructorOptions (Ctor: Class<Component>) {
+export function resolveConstructorOptions (Ctor: Class<Component>) { // Ctor.super不存在就返回Ctor.options
   let options = Ctor.options
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super)

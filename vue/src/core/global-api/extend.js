@@ -4,7 +4,7 @@ import { ASSET_TYPES } from 'shared/constants'
 import { defineComputed, proxy } from '../instance/state'
 import { extend, mergeOptions, validateComponentName } from '../util/index'
 
-export function initExtend (Vue: GlobalAPI) {
+export function initExtend (Vue: GlobalAPI) { // initGlobalAPI中调用
   /**
    * Each instance constructor, including Vue, has a unique
    * cid. This enables us to create wrapped "child
@@ -42,7 +42,7 @@ export function initExtend (Vue: GlobalAPI) {
     Sub.prototype = Object.create(Super.prototype)
     Sub.prototype.constructor = Sub
     Sub.cid = cid++
-    Sub.options = mergeOptions(
+    Sub.options = mergeOptions( // Vue.options与组件的options合并
       Super.options,
       extendOptions
     )
