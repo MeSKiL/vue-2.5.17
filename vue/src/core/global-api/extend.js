@@ -15,19 +15,25 @@ export function initExtend (Vue: GlobalAPI) {
 
   /**
    * Class inheritance
+   *
+   *
+   * 用原型继承的方式返回一个子构造器，每个组件都会有独立的构造器，并且使用了单例模式，用_Ctor记录返回过的构造器，如果再次extend，直接返回原来的值
+   *
+   *
    */
-  Vue.extend = function (extendOptions: Object): Function {
+  Vue.extend = function (extendOptions: Object): Function { // 目的是让sub具有和Vue一样的能力,好处是单例模式
+    // 静态方法，this为Vue
     extendOptions = extendOptions || {}
-    const Super = this
+    const Super = this // Vue
     const SuperId = Super.cid
-    const cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {})
+    const cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {}) // 如果extendOptions有_Ctor这个值，就说明已经初始化过了，直接返回缓存里的值，不需要重新初始化了
     if (cachedCtors[SuperId]) {
       return cachedCtors[SuperId]
     }
 
-    const name = extendOptions.name || Super.options.name
+    const name = extendOptions.name || Super.options.name // 获取extendOptions的名字
     if (process.env.NODE_ENV !== 'production' && name) {
-      validateComponentName(name)
+      validateComponentName(name) // 校验名字如果不符合规则或者是内置html标签，就会警告
     }
 
     const Sub = function VueComponent (options) {

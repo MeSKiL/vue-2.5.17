@@ -26,15 +26,15 @@ export function initLifecycle (vm: Component) { // 在_init的时候执行
   const options = vm.$options
 
   // locate first non-abstract parent
-  let parent = options.parent
+  let parent = options.parent // parent实际上是activeInstance,也就是当前vue的实例,作为parent
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
       parent = parent.$parent
     }
-    parent.$children.push(vm)
+    parent.$children.push(vm) // parent的children就会push当前的vm
   }
 
-  vm.$parent = parent
+  vm.$parent = parent // 把当前的子组件实例指向parent
   vm.$root = parent ? parent.$root : vm
 
   vm.$children = []
@@ -58,8 +58,10 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
     const prevEl = vm.$el
     const prevVnode = vm._vnode
     const prevActiveInstance = activeInstance
-    activeInstance = vm
-    vm._vnode = vnode
+    // 会在update的时候把当前的vm赋值给activeInstance
+    // 当前vm的实例的vnode在patch，把当前实例当作父vue实例给子组件
+    activeInstance = vm // 子组件执行activeInstance的时候 activeInstance就会指向子组件的实例
+    vm._vnode = vnode //_vnode是渲染vnode
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
     if (!prevVnode) { // prevVnode是更新用的，所以一开始是空
@@ -67,7 +69,10 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */) // 第一次执行patch
       // Vue.prototype.__patch__ = inBrowser ? patch : noop 在runtime/index下定义
       // vm.$el 首次传入的是真实的dom
-      // 第二个参数是渲染生产的  执行后得到的vm._render() vnode
+      // 第二个参数是渲染生产的  执行后得到的vm._render() createElement生成的 vnode
+
+      //patch是将真实的dom赋值给$el
+
     } else {
       // updates
       vm.$el = vm.__patch__(prevVnode, vnode)

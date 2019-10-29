@@ -34,7 +34,7 @@ const ALWAYS_NORMALIZE = 2
 //     },
 //   }, this.message)
 // }
-export function createElement (
+export function createElement ( // 在initRender中vm.$createElement为createElement方法
   context: Component, // vm
   tag: any, // div
   data: any, // {}
@@ -55,7 +55,7 @@ export function createElement (
 }
 
 // _createElement(context, tag, data, children, normalizationType)
-export function _createElement (
+export function _createElement ( // 在createElement中执行
   context: Component,
   tag?: string | Class<Component> | Function | Object,
   data?: VNodeData,

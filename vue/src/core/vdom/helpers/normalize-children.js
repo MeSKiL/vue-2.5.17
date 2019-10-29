@@ -15,9 +15,9 @@ import { isFalse, isTrue, isDef, isUndef, isPrimitive } from 'shared/util'
 // normalization is needed - if any child is an Array, we flatten the whole
 // thing with Array.prototype.concat. It is guaranteed to be only 1-level deep
 // because functional components already normalize their own children.
-export function simpleNormalizeChildren (children: any) {
+export function simpleNormalizeChildren (children: any) { //_createElement中执行
   for (let i = 0; i < children.length; i++) { // 遍历children，如果children的元素也是数组，就拍平。变成一个一维数组
-    if (Array.isArray(children[i])) { // 只考虑一级
+    if (Array.isArray(children[i])) { // 只考虑一级(个人认为，因为是自动编译生成的，所以不会有多级)
       return Array.prototype.concat.apply([], children)
     }
   }
@@ -28,7 +28,7 @@ export function simpleNormalizeChildren (children: any) {
 // e.g. <template>, <slot>, v-for, or when the children is provided by user
 // with hand-written render functions / JSX. In such cases a full normalization
 // is needed to cater to all possible types of children values.
-export function normalizeChildren (children: any): ?Array<VNode> {
+export function normalizeChildren (children: any): ?Array<VNode> { //_createElement中执行
   return isPrimitive(children) // 如果children是基础类型，就返回一个createTextVNode，文本的VNode
     ? [createTextVNode(children)]
     : Array.isArray(children)
