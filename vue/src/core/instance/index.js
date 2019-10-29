@@ -17,10 +17,10 @@ function Vue (options) { // 代码清晰明了
 // new Vue => init => $mount => compile(template) => render => vnode =>(update) patch => dom
 
 // 往vue原型上挂载方法,先挂方法，后init
-initMixin(Vue)
-stateMixin(Vue)
-eventsMixin(Vue)
-lifecycleMixin(Vue)
-renderMixin(Vue)
+initMixin(Vue) // 挂了_init
+stateMixin(Vue) // 挂了$set $delete $watch
+eventsMixin(Vue) // 挂了$on $once $off $emit
+lifecycleMixin(Vue) // 挂了_update $forceUpdate $destroy
+renderMixin(Vue) // 挂了_render和$nextTick
 
 export default Vue

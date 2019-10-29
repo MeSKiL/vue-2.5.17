@@ -22,7 +22,7 @@ import {
 export let activeInstance: any = null
 export let isUpdatingChildComponent: boolean = false
 
-export function initLifecycle (vm: Component) {
+export function initLifecycle (vm: Component) { // 在_init的时候执行
   const options = vm.$options
 
   // locate first non-abstract parent
@@ -48,8 +48,12 @@ export function initLifecycle (vm: Component) {
   vm._isBeingDestroyed = false
 }
 
-export function lifecycleMixin (Vue: Class<Component>) {
+export function lifecycleMixin (Vue: Class<Component>) { // instance/index
   Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) { // 首次渲染，把vnode映射成真实的dom。   当数据改变，影响视图变化，也会调用
+    //mountComponent中执行
+    // updateComponent = () => {
+    //   vm._update(vm._render(), hydrating)
+    // }
     const vm: Component = this
     const prevEl = vm.$el
     const prevVnode = vm._vnode
@@ -60,10 +64,10 @@ export function lifecycleMixin (Vue: Class<Component>) {
     // based on the rendering backend used.
     if (!prevVnode) { // prevVnode是更新用的，所以一开始是空
       // initial render
-      vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
+      vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */) // 第一次执行patch
       // Vue.prototype.__patch__ = inBrowser ? patch : noop 在runtime/index下定义
       // vm.$el 首次传入的是真实的dom
-      // 第二个是渲染生产的 vm._render() vnode
+      // 第二个参数是渲染生产的  执行后得到的vm._render() vnode
     } else {
       // updates
       vm.$el = vm.__patch__(prevVnode, vnode)
@@ -134,6 +138,12 @@ export function lifecycleMixin (Vue: Class<Component>) {
     }
   }
 }
+
+/**
+ * 先看有没有render(正常情况下一定有render)，没有就警告
+ * 执行beforeMount。(执行$mount的时候,实例上该挂载的，该初始化的基本都完成了)
+ *
+ * */
 
 export function mountComponent ( // 定义了updateComponent函数
   vm: Component,

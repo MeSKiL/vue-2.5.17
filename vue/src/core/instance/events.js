@@ -9,7 +9,7 @@ import {
 } from '../util/index'
 import { updateListeners } from '../vdom/helpers/index'
 
-export function initEvents (vm: Component) {
+export function initEvents (vm: Component) { // 在_init的时候执行
   vm._events = Object.create(null)
   vm._hasHookEvent = false
   // init parent attached events
@@ -43,7 +43,7 @@ export function updateComponentListeners (
   target = undefined
 }
 
-export function eventsMixin (Vue: Class<Component>) {
+export function eventsMixin (Vue: Class<Component>) { // instance/index
   const hookRE = /^hook:/
   Vue.prototype.$on = function (event: string | Array<string>, fn: Function): Component {
     const vm: Component = this

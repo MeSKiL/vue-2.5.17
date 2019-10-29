@@ -34,7 +34,16 @@ extend(Vue.options.components, platformComponents)
 Vue.prototype.__patch__ = inBrowser ? patch : noop // 浏览器环境才有patch,服务端没有dom所以patch是空函数
 
 // public mount method
-Vue.prototype.$mount = function ( // 这个时候render update已经挂好了
+/**
+ * initMixin(Vue)
+ * stateMixin(Vue)
+ * eventsMixin(Vue)
+ * lifecycleMixin(Vue)
+ * renderMixin(Vue)
+ * initGlobalAPI
+ * 都已经初始化好了
+ * */
+Vue.prototype.$mount = function ( // 在runtime with compiler的时候被重写了，将template编译成了render，再执行。所以正常情况下render是一定存在的
   el?: string | Element,
   hydrating?: boolean
 ): Component {

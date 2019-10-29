@@ -696,6 +696,7 @@ export function createPatchFunction(backend) {
     }
 
     return function patch(oldVnode, vnode, hydrating, removeOnly) { // 返回一个patch函数
+        // vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
         // 首次执行，oldVnode是真实的dom
         // vnode 是vm._render生成的vnode
         if (isUndef(vnode)) {
@@ -749,6 +750,8 @@ export function createPatchFunction(backend) {
 
                 }
 
+                // 现在oldVnode一定是虚拟dom了
+
                 // replacing existing element
                 const oldElm = oldVnode.elm // oldElm 就是真实的dom
                 const parentElm = nodeOps.parentNode(oldElm) // dom的parentNode
@@ -761,7 +764,7 @@ export function createPatchFunction(backend) {
                     // leaving transition. Only happens when combining transition +
                     // keep-alive + HOCs. (#4590)
                     oldElm._leaveCb ? null : parentElm,
-                    nodeOps.nextSibling(oldElm) // 参考节点是下一个子节点
+                    nodeOps.nextSibling(oldElm) // 参考节点是下一个兄弟节点，便于插入节点insertBefore
                 )
 
                 // update parent placeholder node element, recursively

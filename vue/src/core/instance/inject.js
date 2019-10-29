@@ -4,7 +4,7 @@ import { hasOwn } from 'shared/util'
 import { warn, hasSymbol } from '../util/index'
 import { defineReactive, toggleObserving } from '../observer/index'
 
-export function initProvide (vm: Component) {
+export function initProvide (vm: Component) { // 在_init的时候执行
   const provide = vm.$options.provide
   if (provide) {
     vm._provided = typeof provide === 'function'
@@ -13,7 +13,7 @@ export function initProvide (vm: Component) {
   }
 }
 
-export function initInjections (vm: Component) {
+export function initInjections (vm: Component) { // 在_init的时候执行
   const result = resolveInject(vm.$options.inject, vm)
   if (result) {
     toggleObserving(false)

@@ -22,8 +22,9 @@ const mount = Vue.prototype.$mount // 先获取在runtime/index上定义的$moun
  * vue最终使用的就是render function
  * 最后调用mount
  *
- * 因为是compiler，所以需要做一步操作，可能写template不写render，需要编译。
+ * 因为是compiler，所以需要做这一步操作，可能写template不写render，需要编译,将template编译后重新调用存下的$mount。
  *
+ * 对有template并且不合法的情况进行了警告
  * */
 Vue.prototype.$mount = function (
   el?: string | Element,

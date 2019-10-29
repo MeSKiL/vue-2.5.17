@@ -59,13 +59,13 @@ export function initState (vm: Component) {
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
-  if (opts.computed) initComputed(vm, opts.computed)
+  if (opts.computed) initComputed(vm, opts.computed) // 初始化computed
   if (opts.watch && opts.watch !== nativeWatch) {
-    initWatch(vm, opts.watch)
+    initWatch(vm, opts.watch) // 初始化watch
   }
 }
 
-function initProps (vm: Component, propsOptions: Object) {
+function initProps (vm: Component, propsOptions: Object) { // initState里执行
   const propsData = vm.$options.propsData || {}
   const props = vm._props = {}
   // cache prop keys so that future props updates can iterate using Array
@@ -113,7 +113,7 @@ function initProps (vm: Component, propsOptions: Object) {
   toggleObserving(true)
 }
 
-function initData (vm: Component) {
+function initData (vm: Component) { // initState里执行
   let data = vm.$options.data // 在$options.data中获取data
   data = vm._data = typeof data === 'function' // 是否是function
     ? getData(data, vm)
@@ -170,7 +170,7 @@ export function getData (data: Function, vm: Component): any {
 
 const computedWatcherOptions = { computed: true }
 
-function initComputed (vm: Component, computed: Object) {
+function initComputed (vm: Component, computed: Object) { // initState里执行
   // $flow-disable-line
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
@@ -202,7 +202,7 @@ function initComputed (vm: Component, computed: Object) {
     if (!(key in vm)) {
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
-      if (key in vm.$data) {
+      if (key in vm.$data) { // 在data或者props里就报错
         warn(`The computed property "${key}" is already defined in data.`, vm)
       } else if (vm.$options.props && key in vm.$options.props) {
         warn(`The computed property "${key}" is already defined as a prop.`, vm)
@@ -254,7 +254,7 @@ function createComputedGetter (key) {
   }
 }
 
-function initMethods (vm: Component, methods: Object) {
+function initMethods (vm: Component, methods: Object) { // initState里执行
   const props = vm.$options.props
   for (const key in methods) {
     if (process.env.NODE_ENV !== 'production') {
@@ -282,7 +282,7 @@ function initMethods (vm: Component, methods: Object) {
   }
 }
 
-function initWatch (vm: Component, watch: Object) {
+function initWatch (vm: Component, watch: Object) { // initState里执行
   for (const key in watch) {
     const handler = watch[key]
     if (Array.isArray(handler)) {
@@ -311,7 +311,7 @@ function createWatcher (
   return vm.$watch(expOrFn, handler, options)
 }
 
-export function stateMixin (Vue: Class<Component>) {
+export function stateMixin (Vue: Class<Component>) { // instance/index
   // flow somehow has problems with directly declared definition object
   // when using Object.defineProperty, so we have to procedurally build up
   // the object here.
