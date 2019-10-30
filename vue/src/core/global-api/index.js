@@ -61,5 +61,9 @@ export function initGlobalAPI(Vue: GlobalAPI) { // 给vue增加了各种api
     initUse(Vue) // 定义Vue.init
     initMixin(Vue) // Vue.mixin
     initExtend(Vue) // Vue.extend
+
     initAssetRegisters(Vue)
+    // Vue.component
+    // Vue.directive
+    // Vue.filter
 }

@@ -64,10 +64,11 @@ const componentVNodeHooks = { // 组件默认会有四个钩子
     )
   },
 
-  insert (vnode: MountedComponentVNode) {
+  insert (vnode: MountedComponentVNode) { // patch中的createElm时插入insertedVnodeQueue，调用patch的invokeInsertHook时执行 。component组件会在initComponent中插入insertedVnodeQueue
+    // 子组件的insert先执行
     const { context, componentInstance } = vnode
     if (!componentInstance._isMounted) {
-      componentInstance._isMounted = true
+      componentInstance._isMounted = true // 设置_isMounted为true
       callHook(componentInstance, 'mounted')
     }
     if (vnode.data.keepAlive) {
@@ -123,7 +124,7 @@ export function createComponent ( // _createElement中执行
   //baseCtor 为 Vue
 
   // plain options object: turn it into a constructor
-  if (isObject(Ctor)) {
+  if (isObject(Ctor)) { // 全局组件的Ctor已经是构造器了
     Ctor = baseCtor.extend(Ctor)
   }
   // 如果Ctor是对象，就会调用Vue.extend将Ctor转换为该组件独有的构造器
@@ -139,10 +140,10 @@ export function createComponent ( // _createElement中执行
 
   // async component
   let asyncFactory // 异步组件
-  if (isUndef(Ctor.cid)) {
-    asyncFactory = Ctor
-    Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context)
-    if (Ctor === undefined) {
+  if (isUndef(Ctor.cid)) { // Ctor是工厂函数
+    asyncFactory = Ctor // 异步工厂函数
+    Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context) // asyncFactory Vue vm
+    if (Ctor === undefined) { // 第一次已经开始加载了，但是还没有拿到结果。 加载成功后，forceUpdate后进来就不为undefined了，就继续下去了，并且Ctor为异步组件的构造器
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.

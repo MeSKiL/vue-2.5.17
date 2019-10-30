@@ -95,7 +95,7 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
 
   Vue.prototype.$forceUpdate = function () {
     const vm: Component = this
-    if (vm._watcher) {
+    if (vm._watcher) { // 调用渲染watcher的update,强制调用updateComponent，也就是强制渲染一次,也就是再走一遍_update和_render
       vm._watcher.update()
     }
   }
@@ -105,13 +105,13 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
     if (vm._isBeingDestroyed) {
       return
     }
-    callHook(vm, 'beforeDestroy')
+    callHook(vm, 'beforeDestroy') // 先执行生命周期
     vm._isBeingDestroyed = true
     // remove self from parent
     const parent = vm.$parent
     if (parent && !parent._isBeingDestroyed && !vm.$options.abstract) {
       remove(parent.$children, vm)
-    }
+    } // 移除父子关系的建立
     // teardown watchers
     if (vm._watcher) {
       vm._watcher.teardown()
@@ -128,9 +128,9 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
     // call the last hook...
     vm._isDestroyed = true
     // invoke destroy hooks on current rendered tree
-    vm.__patch__(vm._vnode, null)
+    vm.__patch__(vm._vnode, null) // 递归销毁子组件
     // fire destroyed hook
-    callHook(vm, 'destroyed')
+    callHook(vm, 'destroyed') // 销毁后执行destroyed
     // turn off all instance listeners.
     vm.$off()
     // remove __vue__ reference
@@ -176,7 +176,7 @@ export function mountComponent ( // 定义了updateComponent函数
       }
     }
   }
-  callHook(vm, 'beforeMount') // 发布订阅模式
+  callHook(vm, 'beforeMount') // 发布订阅模式， 组件挂载之前
 
   let updateComponent // 定义了updateComponent方法
   /* istanbul ignore if */
@@ -211,7 +211,7 @@ export function mountComponent ( // 定义了updateComponent函数
   new Watcher(vm, updateComponent, noop, { // 渲染watcher
     // todo 监听当更新的时候先调用before然后执行updateComponent更新，new的时候并没有走before。new的时候也不该走before
     before () {
-      if (vm._isMounted) {
+      if (vm._isMounted) { // 如果已经挂载好了(不是第一次)就执行beforeUpdate
         callHook(vm, 'beforeUpdate')
       }
     }
@@ -220,7 +220,7 @@ export function mountComponent ( // 定义了updateComponent函数
 
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
-  if (vm.$vnode == null) {
+  if (vm.$vnode == null) { // $vnode指向父vnode，例如<hello-world /> 如果没有vnode就说明不是组件，是根vnode就调用mounted
     vm._isMounted = true
     callHook(vm, 'mounted')
   }
@@ -337,8 +337,8 @@ export function deactivateChildComponent (vm: Component, direct?: boolean) {
 export function callHook (vm: Component, hook: string) {
   // #7573 disable dep collection when invoking lifecycle hooks
   pushTarget()
-  const handlers = vm.$options[hook]
-  if (handlers) {
+  const handlers = vm.$options[hook] // 获取组件上的要调用的生命周期，是一个数组。
+  if (handlers) { // 如果存在就调用
     for (let i = 0, j = handlers.length; i < j; i++) {
       try {
         handlers[i].call(vm)

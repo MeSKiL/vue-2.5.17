@@ -65,7 +65,7 @@ export default class Watcher {
 
   ) {
     this.vm = vm
-    if (isRenderWatcher) { // 如果是渲染watch就在vm上加上_watch
+    if (isRenderWatcher) { // 如果是渲染watch就在vm上加上_watcher
       vm._watcher = this
     }
     vm._watchers.push(this) // 并且把this放入watchers
@@ -76,7 +76,7 @@ export default class Watcher {
       this.user = !!options.user
       this.computed = !!options.computed
       this.sync = !!options.sync
-      this.before = options.before
+      this.before = options.before // 保存before
     } else {
       this.deep = this.user = this.computed = this.sync = false // 否则给默认值
     }

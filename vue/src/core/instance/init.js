@@ -55,6 +55,7 @@ export function initMixin (Vue: Class<Component>) { // instance/index
     initEvents(vm)
     initRender(vm)
     callHook(vm, 'beforeCreate') // 执行生命周期
+    // 得不到组件数据，因为initState在beforeCreate之后
     initInjections(vm) // resolve injections before data/props
 
     // data(){return{xxx:xxx}}为啥可以通过this.xxx访问到
@@ -62,6 +63,7 @@ export function initMixin (Vue: Class<Component>) { // instance/index
 
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
+    // init完后created
 
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {

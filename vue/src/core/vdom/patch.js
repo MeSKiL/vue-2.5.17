@@ -15,7 +15,7 @@ import config from '../config'
 import {SSR_ATTR} from 'shared/constants'
 import {registerRef} from './modules/ref'
 import {traverse} from '../observer/traverse'
-import {activeInstance} from '../instance/lifecycle'
+import {activeInstance, deactivateChildComponent} from '../instance/lifecycle'
 import {isTextInputType} from 'web/util/element'
 
 import {
@@ -200,7 +200,7 @@ export function createPatchFunction(backend) {
             } else {
                 createChildren(vnode, children, insertedVnodeQueue) // 如果有子节点就创建子节点 先insert子元素，后insert父元素
                 if (isDef(data)) {
-                    invokeCreateHooks(vnode, insertedVnodeQueue)
+                    invokeCreateHooks(vnode, insertedVnodeQueue) // 插入insert hook
                 }
                 insert(parentElm, vnode.elm, refElm)
             }
@@ -227,7 +227,7 @@ export function createPatchFunction(backend) {
             const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
             if (isDef(i = i.hook) && isDef(i = i.init)) {
                 // 如果data.hook存在，并且有hook中有init方法，就调用init方法,执行了组件上的init(createElement中createComponent merge hook时 merge的init方法)方法
-                i(vnode, false /* hydrating */)
+                i(vnode, false /* hydrating */) // 递归的方式不断patch子组件
                 // 将遇到的组件实例化
                 /**
                  * <hello-world />
@@ -263,7 +263,7 @@ export function createPatchFunction(backend) {
         }
         // patch后 $el会有值，就赋值给vnode.elm
         vnode.elm = vnode.componentInstance.$el
-        if (isPatchable(vnode)) {
+        if (isPatchable(vnode)) { // 先子后父插入insert
             invokeCreateHooks(vnode, insertedVnodeQueue)
             setScope(vnode)
         } else {
@@ -336,7 +336,7 @@ export function createPatchFunction(backend) {
         i = vnode.data.hook // Reuse variable
         if (isDef(i)) {
             if (isDef(i.create)) i.create(emptyNode, vnode)
-            if (isDef(i.insert)) insertedVnodeQueue.push(vnode)
+            if (isDef(i.insert)) insertedVnodeQueue.push(vnode) // 如果子组件有insert hook的时候，就插入到insertedVnodeQueue
         }
     }
 
@@ -384,6 +384,16 @@ export function createPatchFunction(backend) {
                 invokeDestroyHook(vnode.children[j])
             }
         }
+        // destroy (vnode: MountedComponentVNode) {
+        //     const { componentInstance } = vnode
+        //     if (!componentInstance._isDestroyed) {
+        //         if (!vnode.data.keepAlive) {
+        //             componentInstance.$destroy()
+        //         } else {
+        //             deactivateChildComponent(componentInstance, true /* direct */)
+        //         }
+        //     }
+        // } 子组件又调用$destroy
     }
 
     function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
@@ -714,13 +724,13 @@ export function createPatchFunction(backend) {
         // vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
         // 首次执行，oldVnode是真实的dom
         // vnode 是vm._render生成的vnode
-        if (isUndef(vnode)) {
+        if (isUndef(vnode)) { // 如果vnode是空，并且有oldVnode就执行destroy hook 在$destroy的场景中
             if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
             return
         }
 
         let isInitialPatch = false
-        const insertedVnodeQueue = []
+        const insertedVnodeQueue = [] // 里面放了存在insert hook的组件vnode
 
         if (isUndef(oldVnode)) { // 组件渲染时 oldVnode为空
             // empty mount (likely as component), create new root element

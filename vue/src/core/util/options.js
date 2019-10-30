@@ -426,8 +426,8 @@ export function mergeOptions ( // 将child和parent合并
  * This function is used because child instances need access
  * to assets defined in its ancestor chain.
  */
-export function resolveAsset (
-  options: Object,
+export function resolveAsset ( // _createElement的时候执行  initGlobalApi的时候 initAssetRegisters 在options的components[id]上赋值了构造器
+  options: Object, // vm.$options
   type: string,
   id: string,
   warnMissing?: boolean
@@ -438,14 +438,14 @@ export function resolveAsset (
   }
   const assets = options[type]
   // check local registration variations first
-  if (hasOwn(assets, id)) return assets[id]
-  const camelizedId = camelize(id)
-  if (hasOwn(assets, camelizedId)) return assets[camelizedId]
-  const PascalCaseId = capitalize(camelizedId)
-  if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId]
-  // fallback to prototype chain
+  if (hasOwn(assets, id)) return assets[id] // 如果有这个id就直接返回值
+  const camelizedId = camelize(id) // 否则就将id转化为驼峰
+  if (hasOwn(assets, camelizedId)) return assets[camelizedId] // 如果有这个驼峰的id就返回他
+  const PascalCaseId = capitalize(camelizedId) // 再找不到就用首字母大写这种方式
+  if (hasOwn(assets, PascalCaseId)) return assets[PascalCaseId] // 如果有首字母大写的就返回
+  // fallback to prototype chain // 还不行就去原型找
   const res = assets[id] || assets[camelizedId] || assets[PascalCaseId]
-  if (process.env.NODE_ENV !== 'production' && warnMissing && !res) {
+  if (process.env.NODE_ENV !== 'production' && warnMissing && !res) { // 再找不到就警告
     warn(
       'Failed to resolve ' + type.slice(0, -1) + ': ' + id,
       options

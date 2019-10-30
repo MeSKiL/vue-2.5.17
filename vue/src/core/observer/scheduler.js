@@ -35,7 +35,7 @@ function resetSchedulerState () {
 /**
  * Flush both queues and run the watchers.
  */
-function flushSchedulerQueue () {
+function flushSchedulerQueue () { // 当数据发生变化时会执行
   flushing = true
   let watcher, id
 
@@ -51,7 +51,7 @@ function flushSchedulerQueue () {
 
   // do not cache length because more watchers might be pushed
   // as we run existing watchers
-  for (index = 0; index < queue.length; index++) {
+  for (index = 0; index < queue.length; index++) { // 遍历queue，如果有before就执行before
     watcher = queue[index]
     if (watcher.before) {
       watcher.before()
@@ -98,7 +98,12 @@ function callUpdatedHooks (queue) {
   while (i--) {
     const watcher = queue[i]
     const vm = watcher.vm
-    if (vm._watcher === watcher && vm._isMounted) {
+    // if (isRenderWatcher) { // 如果是渲染watch就在vm上加上_watcher
+    //       vm._watcher = this
+    //     }
+    //     vm._watchers.push(this) // 并且把this放入watchers
+    // 在Watcher的构造函数中，如果是渲染watcher就会赋值给vm._watcher
+    if (vm._watcher === watcher && vm._isMounted) { // 满足_watcher是渲染watcher并且挂载好了的情况下，执行updated
       callHook(vm, 'updated')
     }
   }

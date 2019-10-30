@@ -115,7 +115,8 @@ export function _createElement ( // 在createElement中执行
         config.parsePlatformTagName(tag), data, children,
         undefined, undefined, context
       )
-    } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+    } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) { // 没找到就进else
+      // 局部组件返回的是一个对象，全局组件返回的是一个构造器
       // component
       // 如果是组件就创建组件
       vnode = createComponent(Ctor, data, context, children, tag)
