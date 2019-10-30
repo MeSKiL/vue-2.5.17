@@ -101,7 +101,7 @@ function initProps (vm: Component, propsOptions: Object) { // initState里执行
         }
       })
     } else {
-      defineReactive(props, key, value)
+      defineReactive(props, key, value) // 将props的key变为响应式的
     }
     // static props are already proxied on the component's prototype
     // during Vue.extend(). We only need to proxy props defined at
@@ -153,6 +153,7 @@ function initData (vm: Component) { // initState里执行
   }
   // observe data
   observe(data, true /* asRootData */) // 响应式处理
+  // 在data上加了__ob__属性，并且指向data上的Observe实例,之后把data的除了__ob__属性外的属性变成响应式的
 }
 
 export function getData (data: Function, vm: Component): any {

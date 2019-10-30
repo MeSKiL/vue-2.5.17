@@ -42,7 +42,7 @@ export function validateProp (
     }
   }
   // check default value
-  if (value === undefined) {
+  if (value === undefined) { // 如果value是undefined就获取这个prop的默认值，并给他__ob__，并且变成响应式
     value = getPropDefaultValue(vm, prop, key)
     // since the default value is a fresh copy,
     // make sure to observe it.

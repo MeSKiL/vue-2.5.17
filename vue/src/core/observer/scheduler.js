@@ -47,20 +47,24 @@ function flushSchedulerQueue () { // 当数据发生变化时会执行
   //    user watchers are created before the render watcher)
   // 3. If a component is destroyed during a parent component's watcher run,
   //    its watchers can be skipped.
-  queue.sort((a, b) => a.id - b.id)
+  queue.sort((a, b) => a.id - b.id) // 把watcher从小到大排序，组件的更新是从父到子，创建也是从父到子，所以要保证父watcher在前面，也就是小的在前面
+
+  //user watcher是在渲染watcher之前的，所以也要先执行
+  //如果组件在父组件的watcher里销毁的时候，他的watcher就不用执行了
 
   // do not cache length because more watchers might be pushed
   // as we run existing watchers
   for (index = 0; index < queue.length; index++) { // 遍历queue，如果有before就执行before
+    // 在循环的时候queue.length会发生变化
     watcher = queue[index]
     if (watcher.before) {
       watcher.before()
     }
     id = watcher.id
     has[id] = null
-    watcher.run()
+    watcher.run() // 执行 watcher.run可能执行queueWatch
     // in dev build, check and stop circular updates.
-    if (process.env.NODE_ENV !== 'production' && has[id] != null) {
+    if (process.env.NODE_ENV !== 'production' && has[id] != null) { // 如果有无限循环更新就警告
       circular[id] = (circular[id] || 0) + 1
       if (circular[id] > MAX_UPDATE_COUNT) {
         warn(
@@ -80,11 +84,11 @@ function flushSchedulerQueue () { // 当数据发生变化时会执行
   const activatedQueue = activatedChildren.slice()
   const updatedQueue = queue.slice()
 
-  resetSchedulerState()
+  resetSchedulerState() // 充值状态
 
   // call component updated and activated hooks
   callActivatedHooks(activatedQueue)
-  callUpdatedHooks(updatedQueue)
+  callUpdatedHooks(updatedQueue) // 执行生命周期
 
   // devtool hook
   /* istanbul ignore if */
@@ -132,17 +136,19 @@ function callActivatedHooks (queue) {
  * Jobs with duplicate IDs will be skipped unless it's
  * pushed when the queue is being flushed.
  */
-export function queueWatcher (watcher: Watcher) {
-  const id = watcher.id
-  if (has[id] == null) {
+export function queueWatcher (watcher: Watcher) { // 在watch的update中执行，用于派发更新
+  // 主要是把watcher push到queue里面
+  const id = watcher.id // watcher初始化的时候id也是自增的
+  if (has[id] == null) { // 如果队列里没有这个watcher的时候，才会执行下面的逻辑
     has[id] = true
     if (!flushing) {
-      queue.push(watcher)
-    } else {
+      // 同一个tick内就会push一次到一个队列里
+      queue.push(watcher) // 把watcher push到队列里面,比如同时更新了多个数据，但是订阅者都是一个watcher todo 想知道同时set了多个data，会走几遍flushSchedulerQueue
+    } else { // 如果在flushSchedulerQueue后又进来了
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
       let i = queue.length - 1
-      while (i > index && queue[i].id > watcher.id) {
+      while (i > index && queue[i].id > watcher.id) { // 当满足其中一个条件的时候，就可以在queue中插入一个新的watcher
         i--
       }
       queue.splice(i + 1, 0, watcher)
@@ -150,7 +156,7 @@ export function queueWatcher (watcher: Watcher) {
     // queue the flush
     if (!waiting) {
       waiting = true
-      nextTick(flushSchedulerQueue)
+      nextTick(flushSchedulerQueue) // 保证只执行一次,再下一个tick执行东西
     }
   }
 }
