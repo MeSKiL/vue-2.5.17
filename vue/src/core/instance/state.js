@@ -172,15 +172,17 @@ export function getData (data: Function, vm: Component): any {
 const computedWatcherOptions = { computed: true }
 
 function initComputed (vm: Component, computed: Object) { // initState里执行
+  // computed的dep里也是有渲染watcher的。并且computed也有自己的watcher监听自己依赖的属性。依赖的属性变化的话就会执行computed watcher 的update。如果没有渲染watcher在监听这个computed直接就过了。反正也没人管我。如果有渲染你watcher在监听我。
+  // 就会走getAndInvoke 并且传入更新渲染watcher的回调函数。在getAndInvoke中。计算新的computed值，如果没变就不执行回调，反正也没变，没必要重新渲染。变化了就重新渲染，然后得到新的computed值。
   // $flow-disable-line
-  const watchers = vm._computedWatchers = Object.create(null)
+  const watchers = vm._computedWatchers = Object.create(null) // 先缓存了computedWatchers
   // computed properties are just getters during SSR
   const isSSR = isServerRendering()
 
-  for (const key in computed) {
-    const userDef = computed[key]
-    const getter = typeof userDef === 'function' ? userDef : userDef.get
-    if (process.env.NODE_ENV !== 'production' && getter == null) {
+  for (const key in computed) { // 遍历计算属性
+    const userDef = computed[key] // userDef是计算属性的值,通常是函数，也可以是对象,如果是对象必须有get属性
+    const getter = typeof userDef === 'function' ? userDef : userDef.get // 通过getter得到计算属性的结果
+    if (process.env.NODE_ENV !== 'production' && getter == null) { // 如果没有getter就会警告
       warn(
         `Getter is missing for computed property "${key}".`,
         vm
@@ -189,10 +191,10 @@ function initComputed (vm: Component, computed: Object) { // initState里执行
 
     if (!isSSR) {
       // create internal watcher for the computed property.
-      watchers[key] = new Watcher(
+      watchers[key] = new Watcher( // 实例化watcher
         vm,
-        getter || noop,
-        noop,
+        getter || noop, // getter就是computed的结果
+        noop, // computed的watcher主要还是用来渲染的，所以回调是noop
         computedWatcherOptions
       )
     }
@@ -200,7 +202,7 @@ function initComputed (vm: Component, computed: Object) { // initState里执行
     // component-defined computed properties are already defined on the
     // component prototype. We only need to define computed properties defined
     // at instantiation here.
-    if (!(key in vm)) {
+    if (!(key in vm)) { // 如果key不在vm里，就调用defineComputed,组件的computed的key是在vm中的，因为在Vue.extend的时候执行了initComputed
       defineComputed(vm, key, userDef)
     } else if (process.env.NODE_ENV !== 'production') {
       if (key in vm.$data) { // 在data或者props里就报错
@@ -212,24 +214,32 @@ function initComputed (vm: Component, computed: Object) { // initState里执行
   }
 }
 
-export function defineComputed (
+export function defineComputed ( // initComputed中执行
   target: any,
   key: string,
   userDef: Object | Function
 ) {
   const shouldCache = !isServerRendering()
-  if (typeof userDef === 'function') {
-    sharedPropertyDefinition.get = shouldCache
+  // shouldCache true
+  if (typeof userDef === 'function') { // 如果计算属性是函数的话
+    // const sharedPropertyDefinition = {
+    //   enumerable: true,
+    //   configurable: true,
+    //   get: noop,
+    //   set: noop
+    // }
+    sharedPropertyDefinition.get = shouldCache // 当访问computed的值的时候会执行对应的get方法,如果是函数就是createComputedGetter(key)的返回值
+        // render的时候访问
       ? createComputedGetter(key)
       : userDef
     sharedPropertyDefinition.set = noop
-  } else {
-    sharedPropertyDefinition.get = userDef.get
+  } else { // 如果不是函数，那就是对象，就会有get
+    sharedPropertyDefinition.get = userDef.get // 定义get就是userDef的get
       ? shouldCache && userDef.cache !== false
-        ? createComputedGetter(key)
+        ? createComputedGetter(key) // 当访问computed值的时候，会得到这个函数的返回值
         : userDef.get
       : noop
-    sharedPropertyDefinition.set = userDef.set
+    sharedPropertyDefinition.set = userDef.set // set也就是userDef的set
       ? userDef.set
       : noop
   }
@@ -242,15 +252,15 @@ export function defineComputed (
       )
     }
   }
-  Object.defineProperty(target, key, sharedPropertyDefinition)
+  Object.defineProperty(target, key, sharedPropertyDefinition) // 当访问target.key的时候。结果是sharedPropertyDefinition，组件的话target组件的是原型。通过祖件的实例依然可以访问到getter。为了给多组件共享。
 }
 
-function createComputedGetter (key) {
+function createComputedGetter (key) { // 在render的过程中访问到computed的时候，拿到watcher，调用watcher.depend,然后计算
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
-      watcher.depend()
-      return watcher.evaluate()
+      watcher.depend() // 添加渲染watcher 的依赖收集
+      return watcher.evaluate() // 返回computed的值
     }
   }
 }

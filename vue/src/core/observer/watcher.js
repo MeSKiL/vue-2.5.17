@@ -74,7 +74,7 @@ export default class Watcher {
       // options存在就赋值
       this.deep = !!options.deep
       this.user = !!options.user
-      this.computed = !!options.computed
+      this.computed = !!options.computed // computed的时候computed是true
       this.sync = !!options.sync
       this.before = options.before // 保存before
     } else {
@@ -83,7 +83,7 @@ export default class Watcher {
     this.cb = cb
     this.id = ++uid // uid for batching
     this.active = true
-    this.dirty = this.computed // for computed watchers
+    this.dirty = this.computed // for computed watchers computed的时候是true
 
     //依赖收集
     this.deps = []
@@ -95,7 +95,7 @@ export default class Watcher {
       ? expOrFn.toString()
       : '' // 开发环境expression就是expOrFn toString，仅仅是开发环境下可以看到expression
     // parse expression for getter
-    if (typeof expOrFn === 'function') { // 如果是函数，那实例上的getter就是这个函数,updateComponent是一个函数
+    if (typeof expOrFn === 'function') { // 如果是函数，那实例上的getter就是这个函数,渲染watcher的updateComponent是一个函数，compute的watcher一般也是一个函数，也可能是compute(对象形式) 的get结果
       this.getter = expOrFn
     } else { // 否则会调用parsePath(expOrFn)
       this.getter = parsePath(expOrFn)
@@ -109,9 +109,9 @@ export default class Watcher {
         )
       }
     }
-    if (this.computed) {
+    if (this.computed) { // 如果是computed属性，创建过程中不会求值 this.value为空值，并且初始化一个dep
       this.value = undefined
-      this.dep = new Dep()
+      this.dep = new Dep() // computed也有自己的dep
     } else {
       // 渲染watcher上会执行get求值
       this.value = this.get() // 有了watcher以后再执行get
@@ -127,6 +127,7 @@ export default class Watcher {
     try {
       value = this.getter.call(vm, vm) // 调用getter 在渲染watcher里就是调用了updateComponent的逻辑,然后就会走render，就会访问到模板中的数据了，这个时候的watcher已经Dep.target了，render就会访问到getter里面的数据
       // 执行完以后也就在watcher上挂好了这个组件监听的数据的dep。也在dep上挂好了这个watcher
+      // computed计算结果 调用get的时候，可能会访问一些属性，也会把computed的watcher添加到那些属性的dep里,computed依赖的值发生变化的话，会触发computed watcher的update
     } catch (e) {
       if (this.user) {
         handleError(e, vm, `getter for watcher "${this.expression}"`)
@@ -193,7 +194,7 @@ export default class Watcher {
       // It initializes as lazy by default, and only becomes activated when
       // it is depended on by at least one subscriber, which is typically
       // another computed property or a component's render function.
-      if (this.dep.subs.length === 0) {
+      if (this.dep.subs.length === 0) { // 这里面应该有一个渲染watcher
         // In lazy mode, we don't want to perform computations until necessary,
         // so we simply mark the watcher as dirty. The actual computation is
         // performed just-in-time in this.evaluate() when the computed property
@@ -202,8 +203,8 @@ export default class Watcher {
       } else {
         // In activated mode, we want to proactively perform the computation
         // but only notify our subscribers when the value has indeed changed.
-        this.getAndInvoke(() => {
-          this.dep.notify()
+        this.getAndInvoke(() => { // 重新对computed求值，如果值不一样，就会触发回调，就是更新渲染watcher，这里会把dirty变成true。也就说只有依赖发生变化了，才会把dirty变成true
+          this.dep.notify() // 如果computed的值变了就重新渲染，重新渲染了就会渲染computed的新值了
         })
       }
     } else if (this.sync) { // 同步watch
@@ -254,8 +255,9 @@ export default class Watcher {
    * Evaluate and return the value of the watcher.
    * This only gets called for computed property watchers.
    */
-  evaluate () {
-    if (this.dirty) {
+  evaluate () { // 对computed求职，如果dirty是true，就返回结果并把dirty设为false。也就是只求一次值
+    if (this.dirty) { // 只有依赖的属性发生变化了，dirty才会变成true，才会重新求值，不然就直接返回this.value。也就是computed watcher监听的属性变化了，并且computed的结果也变化了 执行computed watcher的update，之后会给computed重新求值.
+      // 如果依赖的属性变化但是计算的结果没有变化，是不会设置dirty为true的
       this.value = this.get()
       this.dirty = false
     }
@@ -265,7 +267,7 @@ export default class Watcher {
   /**
    * Depend on this watcher. Only for computed property watchers.
    */
-  depend () {
+  depend () { // 给computed的dep里添加依赖watcher
     if (this.dep && Dep.target) {
       this.dep.depend()
     }

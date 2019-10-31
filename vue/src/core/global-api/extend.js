@@ -54,7 +54,7 @@ export function initExtend (Vue: GlobalAPI) { // initGlobalAPI中调用
     if (Sub.options.props) {
       initProps(Sub)
     }
-    if (Sub.options.computed) {
+    if (Sub.options.computed) { // 组件的computed在这里就挂好了
       initComputed(Sub)
     }
 
