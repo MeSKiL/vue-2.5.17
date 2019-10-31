@@ -209,7 +209,7 @@ export default class Watcher {
     } else if (this.sync) { // 同步watch
       this.run()
     } else {
-      queueWatcher(this) // watch队列, nextTick执行了flushSchedulerQueue，执行了run，就又走了updateComponent
+      queueWatcher(this) // watch队列, nextTick执行了flushSchedulerQueue，执行了run，也就是getAndInvoke，就又走了updateComponent。 todo 个人认为是把这个tick更新的任务往队列里推
     }
   }
 
@@ -225,6 +225,7 @@ export default class Watcher {
 
   getAndInvoke (cb: Function) {
     const value = this.get() // user watch用this.get求新值，和老值做对比   渲染watcher走get，也就是再一次执行了updateComponent
+    // 渲染watcher和user watcher完全不一样却用同一个方法。精彩。渲染watcher执行getter方法。user watcher判断前后的值执行回调。
     if (
       value !== this.value ||
       // Deep watchers and watchers on Object/Arrays should fire even

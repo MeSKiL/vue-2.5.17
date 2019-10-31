@@ -61,7 +61,7 @@ function flushSchedulerQueue () { // 当数据发生变化时会执行
       watcher.before()
     }
     id = watcher.id
-    has[id] = null
+    has[id] = null // 因为has[id]在这里被设置为了null，所以run的时候还能把这个watcher加进去。所以会导致死循环
     watcher.run() // 执行 watcher.run可能执行queueWatch
     // in dev build, check and stop circular updates.
     if (process.env.NODE_ENV !== 'production' && has[id] != null) { // 如果有无限循环更新就警告
@@ -84,7 +84,7 @@ function flushSchedulerQueue () { // 当数据发生变化时会执行
   const activatedQueue = activatedChildren.slice()
   const updatedQueue = queue.slice()
 
-  resetSchedulerState() // 充值状态
+  resetSchedulerState() // 重置全局变量的状态
 
   // call component updated and activated hooks
   callActivatedHooks(activatedQueue)
@@ -143,8 +143,8 @@ export function queueWatcher (watcher: Watcher) { // 在watch的update中执行�
     has[id] = true
     if (!flushing) {
       // 同一个tick内就会push一次到一个队列里
-      queue.push(watcher) // 把watcher push到队列里面,比如同时更新了多个数据，但是订阅者都是一个watcher todo 想知道同时set了多个data，会走几遍flushSchedulerQueue
-    } else { // 如果在flushSchedulerQueue后又进来了
+      queue.push(watcher) // 把watcher push到队列里面,比如同时更新了多个数据，但是订阅者都是一个watcher todo 一次set了多个data，这些watcher会在nextTick一起flushSchedulerQueue。有没有可能在nexttick的时候，这个方法里的data还没变完，是不是就在下一个tick执行了
+    } else { // 如果在flushSchedulerQueue后又进来了,也就是说在run的时候，又set了 a ，就会又执行 a 的各个watcher的update，就又进来了。如果监听a的watcher不在queue里就插入到queue里去。
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
       let i = queue.length - 1

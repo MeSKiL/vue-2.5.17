@@ -45,10 +45,12 @@ export class Observer { //observe 方法中被实例化 initData的时候会把�
     this.vmCount = 0
     def(value, '__ob__', this) // 给value添加__ob__这个属性,并且指向当前这个Observer实例
     if (Array.isArray(value)) { // 如果value是数组
-      const augment = hasProto
+      const augment = hasProto // 如果有原型链,就把这个数组的原型链指向了array methods
         ? protoAugment
         : copyAugment
       augment(value, arrayMethods, arrayKeys)
+      // const arrayProto = Array.prototype
+      // export const arrayMethods = Object.create(arrayProto)
       this.observeArray(value) // 遍历数组元素，递归调用观察者,传入data的话不是数组，就直接走walk
     } else {
       this.walk(value) // 遍历对象上的所有属性，调用defineReactive 会把value中属性去做枚举，并依次调用defineReactive，但是不会枚举__ob__,因为__ob__是不可枚举的，如果不用def，__ob__也会调用defineReactive，没有必要
@@ -166,8 +168,15 @@ export function defineReactive ( // 把对象的属性变成响应式的,其实�
       const value = getter ? getter.call(obj) : val // 有getter就取getter没有就取val
       if (Dep.target) { // 有target的时候
         dep.depend() // 调用watcher的addDep方法
-        if (childOb) { // 如果子属性是对象，就调用childOb.dep.depend() todo 有啥用
-          childOb.dep.depend()
+        if (childOb) { // 如果子属性是对象，就调用childOb.dep.depend() 就把子属性的依赖也添加进来。没啥用。但是如果调用了Vue.set，dep.notify的时候会重新触发渲染
+          // 为Vue.set量身定制的逻辑
+          // 比如data(){
+          //  msg:{
+          //    a:1
+          //  }
+          // }
+          // 如果不把watcher与子属性互相依赖，之后set msg 的时候走msg.dep.notify的时候,是不会触发渲染watcher的 todo
+          childOb.dep.depend() //
           if (Array.isArray(value)) {
             dependArray(value)
           }
@@ -203,35 +212,35 @@ export function defineReactive ( // 把对象的属性变成响应式的,其实�
  * triggers change notification if the property doesn't
  * already exist.
  */
-export function set (target: Array<any> | Object, key: any, val: any): any {
-  if (process.env.NODE_ENV !== 'production' &&
+export function set (target: Array<any> | Object, key: any, val: any): any { // 设置值，并且变成响应式的，并且更新
+  if (process.env.NODE_ENV !== 'production' && // 不能对空或基础类型的值调用set
     (isUndef(target) || isPrimitive(target))
   ) {
     warn(`Cannot set reactive property on undefined, null, or primitive value: ${(target: any)}`)
   }
-  if (Array.isArray(target) && isValidArrayIndex(key)) {
+  if (Array.isArray(target) && isValidArrayIndex(key)) { // 如果是数组就修改数组的长度，然后插入元素
     target.length = Math.max(target.length, key)
-    target.splice(key, 1, val)
+    target.splice(key, 1, val) // 调用原生数组方法就响应式了
     return val
   }
-  if (key in target && !(key in Object.prototype)) {
+  if (key in target && !(key in Object.prototype)) { // 如果是对象，就看这个key是不是在对象里，如果在是可以重新渲染的，不需要set，就return就行了
     target[key] = val
     return val
   }
-  const ob = (target: any).__ob__
+  const ob = (target: any).__ob__ // 拿到ob，并且如果target是vue实例或者是root data，就不能set
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
       'Avoid adding reactive properties to a Vue instance or its root $data ' +
       'at runtime - declare it upfront in the data option.'
     )
     return val
-  }
+  } // 如果target不是响应式对象，就直接赋值就行了
   if (!ob) {
     target[key] = val
     return val
   }
-  defineReactive(ob.value, key, val)
-  ob.dep.notify()
+  defineReactive(ob.value, key, val) // 如果上面都不满足，就要把新的值变成响应式的
+  ob.dep.notify() // 然后通知一下
   return val
 }
 
@@ -244,7 +253,7 @@ export function del (target: Array<any> | Object, key: any) {
   ) {
     warn(`Cannot delete reactive property on undefined, null, or primitive value: ${(target: any)}`)
   }
-  if (Array.isArray(target) && isValidArrayIndex(key)) {
+  if (Array.isArray(target) && isValidArrayIndex(key)) { // 如果是数组直接删，数组方法已经封装过了
     target.splice(key, 1)
     return
   }
@@ -256,11 +265,11 @@ export function del (target: Array<any> | Object, key: any) {
     )
     return
   }
-  if (!hasOwn(target, key)) {
+  if (!hasOwn(target, key)) { // 没有key就返回
     return
   }
   delete target[key]
-  if (!ob) {
+  if (!ob) { // 不是响应式对象的就返回
     return
   }
   ob.dep.notify()

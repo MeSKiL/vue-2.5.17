@@ -21,7 +21,7 @@ const methodsToPatch = [
 /**
  * Intercept mutating methods and emit events
  */
-methodsToPatch.forEach(function (method) {
+methodsToPatch.forEach(function (method) { // 获取到数组方法后改写,所以数组api是可以响应式的。其实是手动触发的。
   // cache original method
   const original = arrayProto[method]
   def(arrayMethods, method, function mutator (...args) {
@@ -37,9 +37,9 @@ methodsToPatch.forEach(function (method) {
         inserted = args.slice(2)
         break
     }
-    if (inserted) ob.observeArray(inserted)
+    if (inserted) ob.observeArray(inserted) // 如果是添加数据，要把添加的数据也变成响应式的
     // notify change
-    ob.dep.notify()
+    ob.dep.notify() // 触发响应式更新
     return result
   })
 })

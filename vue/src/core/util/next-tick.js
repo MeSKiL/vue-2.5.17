@@ -34,11 +34,11 @@ let useMacroTask = false
 // in IE. The only polyfill that consistently queues the callback after all DOM
 // events triggered in the same loop is by using MessageChannel.
 /* istanbul ignore if */
-if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
-  macroTimerFunc = () => {
-    setImmediate(flushCallbacks)
+if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) { // 浏览器是否原生支持setImmediate
+  macroTimerFunc = () => { // 宏任务
+    setImmediate(flushCallbacks) // 如果支持就直接调用setImmediate
   }
-} else if (typeof MessageChannel !== 'undefined' && (
+} else if (typeof MessageChannel !== 'undefined' && ( // 如果没有setImmediate，就用messageChannel实现宏任务
   isNative(MessageChannel) ||
   // PhantomJS
   MessageChannel.toString() === '[object MessageChannelConstructor]'
@@ -51,7 +51,7 @@ if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
   }
 } else {
   /* istanbul ignore next */
-  macroTimerFunc = () => {
+  macroTimerFunc = () => { // 否则就降级为setTimeout0
     setTimeout(flushCallbacks, 0)
   }
 }
@@ -60,7 +60,7 @@ if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
 /* istanbul ignore next, $flow-disable-line */
 if (typeof Promise !== 'undefined' && isNative(Promise)) {
   const p = Promise.resolve()
-  microTimerFunc = () => {
+  microTimerFunc = () => { // 微任务如果浏览器支持微任务，就用promise实现
     p.then(flushCallbacks)
     // in problematic UIWebViews, Promise.then doesn't completely break, but
     // it can get stuck in a weird state where callbacks are pushed into the
@@ -69,7 +69,7 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
     // "force" the microtask queue to be flushed by adding an empty timer.
     if (isIOS) setTimeout(noop)
   }
-} else {
+} else { // 否则微任务就是宏任务
   // fallback to macro
   microTimerFunc = macroTimerFunc
 }
@@ -86,30 +86,30 @@ export function withMacroTask (fn: Function): Function {
     return res
   })
 }
-
-export function nextTick (cb?: Function, ctx?: Object) {
+// tick其实就是主线程。主线程执行完了会去任务队列中获取任务。
+export function nextTick (cb?: Function, ctx?: Object) { // 当前无论执行多少次，都会把任务添加到callbacks里，在下一个tick里执行
   let _resolve
-  callbacks.push(() => {
+  callbacks.push(() => { // 以匿名函数的方式加入callback，如果有某个函数执行失败了不会影响主流程
     if (cb) {
       try {
         cb.call(ctx)
       } catch (e) {
         handleError(e, ctx, 'nextTick')
       }
-    } else if (_resolve) {
+    } else if (_resolve) { // 如果是promise就会resolve然后执行then函数
       _resolve(ctx)
     }
   })
-  if (!pending) {
+  if (!pending) { // 确保这里的逻辑只走一次
     pending = true
-    if (useMacroTask) {
-      macroTimerFunc()
+    if (useMacroTask) { // 通过useMacroTask判断是用macroTimerFunc执行还是用microTimerFunc执行
+      macroTimerFunc() // 已经执行了，但是nextTick还在往callback里添加任务
     } else {
       microTimerFunc()
     }
   }
   // $flow-disable-line
-  if (!cb && typeof Promise !== 'undefined') {
+  if (!cb && typeof Promise !== 'undefined') { // 如果没有callback就会返回promise，那么nextTick的then就会在callbacks走的时候调用了_resolve，执行then
     return new Promise(resolve => {
       _resolve = resolve
     })
