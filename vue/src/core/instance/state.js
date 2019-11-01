@@ -296,8 +296,8 @@ function initMethods (vm: Component, methods: Object) { // initState里执行
 function initWatch (vm: Component, watch: Object) { // initState里执行
   for (const key in watch) {
     const handler = watch[key]
-    if (Array.isArray(handler)) {
-      for (let i = 0; i < handler.length; i++) {
+    if (Array.isArray(handler)) { // handler可以是数组也可以是普通的对象或函数
+      for (let i = 0; i < handler.length; i++) { // 如果是数组就遍历数组去调用createWatcher
         createWatcher(vm, key, handler[i])
       }
     } else {
@@ -306,13 +306,13 @@ function initWatch (vm: Component, watch: Object) { // initState里执行
   }
 }
 
-function createWatcher (
+function createWatcher ( // 做数据规范化，把数据变成我们需要的类型。然后调用$watch
   vm: Component,
   expOrFn: string | Function,
   handler: any,
   options?: Object
 ) {
-  if (isPlainObject(handler)) {
+  if (isPlainObject(handler)) { // handler如果是对象就去handler里的handler属性,必须是个方法
     options = handler
     handler = handler.handler
   }
@@ -354,16 +354,16 @@ export function stateMixin (Vue: Class<Component>) { // instance/index
     options?: Object
   ): Function {
     const vm: Component = this
-    if (isPlainObject(cb)) {
+    if (isPlainObject(cb)) { // 如果cb是对象，就规范成函数
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
-    options.user = true
+    options.user = true // 如果是$watch创建的watcher，那就是一个user watcher
     const watcher = new Watcher(vm, expOrFn, cb, options)
-    if (options.immediate) {
+    if (options.immediate) { // 如果options里配置了immediate，就触发一次callback
       cb.call(vm, watcher.value)
     }
-    return function unwatchFn () {
+    return function unwatchFn () { // 返回一个函数，这个函数执行的话可以销毁这个watcher
       watcher.teardown()
     }
   }

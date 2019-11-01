@@ -16,7 +16,7 @@ export function traverse (val: any) {
   seenObjects.clear()
 }
 
-function _traverse (val: any, seen: SimpleSet) {
+function _traverse (val: any, seen: SimpleSet) { // 把整个对象都遍历一遍，也就是每个值都访问一遍，走一遍getter，对象里的每一个响应式的对象就添加了watcher
   let i, keys
   const isA = Array.isArray(val)
   if ((!isA && !isObject(val)) || Object.isFrozen(val) || val instanceof VNode) {

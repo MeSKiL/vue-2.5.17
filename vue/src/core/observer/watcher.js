@@ -93,13 +93,16 @@ export default class Watcher {
     this.newDepIds = new Set()
     this.expression = process.env.NODE_ENV !== 'production'
       ? expOrFn.toString()
+
       : '' // 开发环境expression就是expOrFn toString，仅仅是开发环境下可以看到expression
     // parse expression for getter
     if (typeof expOrFn === 'function') { // 如果是函数，那实例上的getter就是这个函数,渲染watcher的updateComponent是一个函数，compute的watcher一般也是一个函数，也可能是compute(对象形式) 的get结果
+      // computed watcher就是计算函数 render watcher就是updateComponent
       this.getter = expOrFn
-    } else { // 否则会调用parsePath(expOrFn)
-      this.getter = parsePath(expOrFn)
-      if (!this.getter) {
+    } else { // 否则会调用parsePath(expOrFn) user watcher的expOrFn基本是字符串
+      // watch 一个字符串
+      this.getter = parsePath(expOrFn) // 其实是用来访问数据的，帮数据做依赖收集，收集这个user watcher
+      if (!this.getter) { // this.getter其实是parsePath返回的函数
         this.getter = function () {}
         process.env.NODE_ENV !== 'production' && warn(
           `Failed watching path: "${expOrFn}" ` +
@@ -113,8 +116,8 @@ export default class Watcher {
       this.value = undefined
       this.dep = new Dep() // computed也有自己的dep
     } else {
-      // 渲染watcher上会执行get求值
-      this.value = this.get() // 有了watcher以后再执行get
+      // 渲染watcher和user watcher上会执行get求值
+      this.value = this.get()
     }
   }
   /**
@@ -125,6 +128,7 @@ export default class Watcher {
     let value
     const vm = this.vm
     try {
+      // userWatcher的时候，传入vm，触发getter也就是触发parsePath返回的函数,就会访问到监听的值。就会添加到那个值的dep里去了
       value = this.getter.call(vm, vm) // 调用getter 在渲染watcher里就是调用了updateComponent的逻辑,然后就会走render，就会访问到模板中的数据了，这个时候的watcher已经Dep.target了，render就会访问到getter里面的数据
       // 执行完以后也就在watcher上挂好了这个组件监听的数据的dep。也在dep上挂好了这个watcher
       // computed计算结果 调用get的时候，可能会访问一些属性，也会把computed的watcher添加到那些属性的dep里,computed依赖的值发生变化的话，会触发computed watcher的update
@@ -137,7 +141,7 @@ export default class Watcher {
     } finally {
       // "touch" every property so they are all tracked as
       // dependencies for deep watching
-      if (this.deep) {
+      if (this.deep) { // 深度遍历这个方法
         traverse(value)
       }
       popTarget() // 恢复上一次的target
@@ -188,6 +192,8 @@ export default class Watcher {
    * Will be called when a dependency changes.
    */
   update () {
+    // 所以基本所有的watcher都是下个tick走的，除了sync的user watcher。
+    // computed watcher被触发了，就触发渲染watcher，下一个tick渲染。computed watcher就是工具人
     /* istanbul ignore else */
     if (this.computed) {
       // A computed property watcher has two modes: lazy and activated.
@@ -204,13 +210,13 @@ export default class Watcher {
         // In activated mode, we want to proactively perform the computation
         // but only notify our subscribers when the value has indeed changed.
         this.getAndInvoke(() => { // 重新对computed求值，如果值不一样，就会触发回调，就是更新渲染watcher，这里会把dirty变成true。也就说只有依赖发生变化了，才会把dirty变成true
-          this.dep.notify() // 如果computed的值变了就重新渲染，重新渲染了就会渲染computed的新值了
+          this.dep.notify() // 如果computed的值变了就重新渲染，就会触发渲染watcher，然后加入queueWatcher 下一个tick重新渲染了就会渲染computed的新值了
         })
       }
-    } else if (this.sync) { // 同步watch
+    } else if (this.sync) { // 如果user watcher里配置了sync，直接就run，不会在nextTick执行
       this.run()
     } else {
-      queueWatcher(this) // watch队列, nextTick执行了flushSchedulerQueue，执行了run，也就是getAndInvoke，就又走了updateComponent。 todo 个人认为是把这个tick更新的任务往队列里推
+      queueWatcher(this) // watch队列, nextTick执行了flushSchedulerQueue，执行了run，也就是getAndInvoke，就又走了updateComponent。
     }
   }
 

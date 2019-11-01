@@ -49,7 +49,8 @@ function flushSchedulerQueue () { // 当数据发生变化时会执行
   //    its watchers can be skipped.
   queue.sort((a, b) => a.id - b.id) // 把watcher从小到大排序，组件的更新是从父到子，创建也是从父到子，所以要保证父watcher在前面，也就是小的在前面
 
-  //user watcher是在渲染watcher之前的，所以也要先执行
+  //因为先init watcher user watcher是在渲染watcher之前的，所以也要先执行
+  // 渲染watcher是在在init watcher之后mountComponent里的
   //如果组件在父组件的watcher里销毁的时候，他的watcher就不用执行了
 
   // do not cache length because more watchers might be pushed
