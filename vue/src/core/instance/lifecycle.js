@@ -56,7 +56,7 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
     // }
     const vm: Component = this
     const prevEl = vm.$el
-    const prevVnode = vm._vnode
+    const prevVnode = vm._vnode // 第一次给_vnode赋值了，所以更新的时候preVonde是有值的
     const prevActiveInstance = activeInstance
     // 会在update的时候把当前的vm赋值给activeInstance
     // 当前vm的实例的vnode在patch，把当前实例当作父vue实例给子组件
@@ -73,7 +73,7 @@ export function lifecycleMixin (Vue: Class<Component>) { // instance/index
 
       //patch是将真实的dom赋值给$el
 
-    } else {
+    } else { // 更新走这里
       // updates
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
@@ -227,7 +227,7 @@ export function mountComponent ( // 定义了updateComponent函数
   return vm
 }
 
-export function updateChildComponent (
+export function updateChildComponent ( //在组件的prepatch中执行,组件更新，就需要对子组件更新
   vm: Component,
   propsData: ?Object,
   listeners: ?Object,
