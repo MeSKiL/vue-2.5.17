@@ -34,7 +34,7 @@ const hooks = ['create', 'activate', 'update', 'remove', 'destroy']
 
 function sameVnode(a, b) { // 满足下面的条件的话，就认为是相同的vnode
     return (
-        a.key === b.key && ( // 如果key相等
+        a.key === b.key && ( // 如果key相等,key为null也相等
             (
                 a.tag === b.tag &&
                 a.isComment === b.isComment &&
@@ -323,7 +323,7 @@ export function createPatchFunction(backend) {
     }
 
     function isPatchable(vnode) { // 找到可挂载的真实的节点
-        while (vnode.componentInstance) { // 如果vnode有componentInstance，说明vnode是组件vnode，也就是占位符vnode，就无限循环，直到有真实的vnode为止
+        while (vnode.componentInstance) { // 如果vnode有componentInstance，说明vnode是组件vnode，也就是占位符vnode，就说明他不止是渲染vnode还是占位符vnode，就无限循环，直到有真实的渲染vnode为止
             vnode = vnode.componentInstance._vnode
         }
         return isDef(vnode.tag) // 一般组件的根vnode是div,就是可挂载的节点
@@ -439,7 +439,7 @@ export function createPatchFunction(backend) {
         }
     }
 
-    function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
+    function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) { // 递归遍历所有dom，做diff算法
         let oldStartIdx = 0
         let newStartIdx = 0
         let oldEndIdx = oldCh.length - 1
@@ -460,28 +460,29 @@ export function createPatchFunction(backend) {
         }
 
         while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
-            if (isUndef(oldStartVnode)) {
+            if (isUndef(oldStartVnode)) { // 如果没有oldStartVnode，就取下一个
                 oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
-            } else if (isUndef(oldEndVnode)) {
+            } else if (isUndef(oldEndVnode)) { // 如果没有oldEndVnode，就取上一个
                 oldEndVnode = oldCh[--oldEndIdx]
-            } else if (sameVnode(oldStartVnode, newStartVnode)) {
+            } else if (sameVnode(oldStartVnode, newStartVnode)) { // 第一个old与第一个new判断
                 patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue)
                 oldStartVnode = oldCh[++oldStartIdx]
                 newStartVnode = newCh[++newStartIdx]
-            } else if (sameVnode(oldEndVnode, newEndVnode)) {
+            } else if (sameVnode(oldEndVnode, newEndVnode)) { // 最后一个old和最后一个new判断
                 patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue)
                 oldEndVnode = oldCh[--oldEndIdx]
                 newEndVnode = newCh[--newEndIdx]
-            } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+            } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right 第一个old和最后一个new判断
                 patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
                 canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
                 oldStartVnode = oldCh[++oldStartIdx]
                 newEndVnode = newCh[--newEndIdx]
-            } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+            } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left // 最后一个old 和第一个new判断
                 patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
                 canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
                 oldEndVnode = oldCh[--oldEndIdx]
                 newStartVnode = newCh[++newStartIdx]
+                // 这么多判断都是为了不同情况下，去寻求最优的解，尽量复用原先有的节点
             } else {
                 if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
                 idxInOld = isDef(newStartVnode.key)
@@ -536,7 +537,7 @@ export function createPatchFunction(backend) {
         }
     }
 
-    function patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly) {
+    function patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly) { // 如果新旧vnode 是同样的vnode，就会执行patchVnode
         if (oldVnode === vnode) {
             return
         }
@@ -567,31 +568,33 @@ export function createPatchFunction(backend) {
 
         let i
         const data = vnode.data // 如果vnode有data，并且有hook和prepatch，就说明是组件vnode，旧执行prepatch
-        if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) { // 组件更新，就需要对子组件更新，其实就是调用了updateChildComponent
+        if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
+            // 组件更新，就需要对子组件更新，其实就是调用了updateChildComponent
+            // 其实就是占位符节点HelloWorld更新，就需要对他真实的子节点更新
             i(oldVnode, vnode)
         }
 
-        const oldCh = oldVnode.children // 获取新旧节点的children,如果有children就是普通的vnode如果没有就是component
+        const oldCh = oldVnode.children // 获取新旧节点的children,如果有children就是普通的vnode 如果没有就是component
         const ch = vnode.children
         if (isDef(data) && isPatchable(vnode)) { // 如果有data，并且可挂载就执行update钩子
             for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
             if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
         }
-        if (isUndef(vnode.text)) {
+        if (isUndef(vnode.text)) { // 新节点如果没有text
             if (isDef(oldCh) && isDef(ch)) { // 如果新旧vnode都有children,就会updateChildren
-                if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)
-            } else if (isDef(ch)) {
-                if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '')
+                if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly) // 核心diff算法
+            } else if (isDef(ch)) { // 只有新的没有老的
+                if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '') // 老的有text直接把text去了，然后插入新的子节点
                 addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)
-            } else if (isDef(oldCh)) {
+            } else if (isDef(oldCh)) { // 只有老的没有新的,就把老的都删掉,因为新的没有子节点，也没有text，清空就行了
                 removeVnodes(elm, oldCh, 0, oldCh.length - 1)
-            } else if (isDef(oldVnode.text)) {
+            } else if (isDef(oldVnode.text)) { // 如果老的有text，新的没text，就把老的设置为空
                 nodeOps.setTextContent(elm, '')
             }
         } else if (oldVnode.text !== vnode.text) {  // 如果有text就是文本节点,并且text不相等就直接更新
             nodeOps.setTextContent(elm, vnode.text)
         }
-        if (isDef(data)) {
+        if (isDef(data)) { // 执行postpatch
             if (isDef(i = data.hook) && isDef(i = i.postpatch)) i(oldVnode, vnode)
         }
     }
@@ -724,6 +727,8 @@ export function createPatchFunction(backend) {
         // vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
         // 首次执行，oldVnode是真实的dom
         // vnode 是vm._render生成的vnode
+
+        // 更新的时候oldVnode是prevVnode
         if (isUndef(vnode)) { // 如果vnode是空，并且有oldVnode就执行destroy hook 在$destroy的场景中
             if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
             return
@@ -738,6 +743,7 @@ export function createPatchFunction(backend) {
             createElm(vnode, insertedVnodeQueue)
         } else {
             const isRealElement = isDef(oldVnode.nodeType) // oldVnode是不是真实的dom，第一次执行，且传的是div这种的话的话是true
+            // 更新过程的话 isRealElement是false
             if (!isRealElement && sameVnode(oldVnode, vnode)) { // 新旧节点相同的时候，会执行patcherVnode，否则执行else
                 // patch existing root node
                 patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly)
@@ -795,6 +801,7 @@ export function createPatchFunction(backend) {
 
                 // update parent placeholder node element, recursively
                 if (isDef(vnode.parent)) { // vnode.parent是占位符节点
+                    // 更新占位符节点，让占位符节点的elm指向新的vnode的elm，并执行一些hook
                     let ancestor = vnode.parent
                     const patchable = isPatchable(vnode) // 当前渲染的节点是不是可挂载的
                     while (ancestor) { // 如果占位符存在
@@ -819,7 +826,7 @@ export function createPatchFunction(backend) {
                         } else {
                             registerRef(ancestor)
                         }
-                        ancestor = ancestor.parent // 如果组件的根节点还是占位符节点，就一直往上找,是占位符系欸但，就指elm到vnode的elm，并且调用一系列声明周期函数.更新父占位符节点
+                        ancestor = ancestor.parent // 如果组件的根节点还是占位符节点，就一直往上找,是占位符，就指elm到vnode的elm，并且调用一系列生命周期函数.更新父占位符节点
                     }
                 }
 
