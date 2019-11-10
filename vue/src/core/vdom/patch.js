@@ -569,10 +569,12 @@ export function createPatchFunction(backend) {
         let i
         const data = vnode.data // 如果vnode有data，并且有hook和prepatch，就说明是组件vnode，旧执行prepatch
         if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
-            // 组件更新，就需要对子组件更新，其实就是调用了updateChildComponent
+            // 组件更新，就需要对children更新，其实就是调用了updateChildComponent
             // 其实就是占位符节点HelloWorld更新，就需要对他真实的子节点更新
             i(oldVnode, vnode)
         }
+        // 当最外层的组件开始执行 update 更新的时候，会在 nextTick 执行 flushSchedulerQueue，这个时候内部的 flushing 会设置为 true。
+        // 之后执行 patch 然后执行 prepatch 更新子组件的时候，会触发子组件的重新渲染，这个时候子组件执行 queueWatcher 的时候，flushing 值为 true，那么就会同步把 queue 插入到当前执行的队列中，同步更新。
 
         const oldCh = oldVnode.children // 获取新旧节点的children,如果有children就是普通的vnode 如果没有就是component
         const ch = vnode.children
