@@ -178,10 +178,10 @@ export function createComponent ( // _createElement中执行
 
   // extract listeners, since these needs to be treated as
   // child component listeners instead of DOM listeners
-  const listeners = data.on
+  const listeners = data.on // 把listeners指向data.on
   // replace with listeners with .native modifier
   // so it gets processed during parent component patch.
-  data.on = data.nativeOn
+  data.on = data.nativeOn  // data.on指向data.nativeOn。这也就是为什么组件必须要用.native才能触发原生dom事件
 
   if (isTrue(Ctor.options.abstract)) {
     // abstract components do not keep anything

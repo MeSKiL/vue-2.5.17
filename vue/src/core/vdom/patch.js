@@ -79,11 +79,13 @@ export function createPatchFunction(backend) {
     for (i = 0; i < hooks.length; ++i) {
         cbs[hooks[i]] = []
         for (j = 0; j < modules.length; ++j) {
-            if (isDef(modules[j][hooks[i]])) {
+            if (isDef(modules[j][hooks[i]])) { // 看modules有没有定义hook，定义了就把modules的hook push到 cbs的对应的hooks里
                 cbs[hooks[i]].push(modules[j][hooks[i]])
             }
         }
     }
+    // cbs['create'] = [attrs.create,class.create,dom-props.create,event.create.style.create,transition.create] invokeCreateHooks 节点创建的时候执行
+    // cbs['update'] = [xxx xxx xxx xxx] 节点更新的时候执行
     // 在patch过程中，遇到相对应的钩子就会执行相关的钩子函数
     // 初始化
 
@@ -199,7 +201,7 @@ export function createPatchFunction(backend) {
                 }
             } else {
                 createChildren(vnode, children, insertedVnodeQueue) // 如果有子节点就创建子节点 先insert子元素，后insert父元素
-                if (isDef(data)) {
+                if (isDef(data)) { // 创建完子节点后调用invokeCreateHooks
                     invokeCreateHooks(vnode, insertedVnodeQueue) // 插入insert hook
                 }
                 insert(parentElm, vnode.elm, refElm)
@@ -329,7 +331,7 @@ export function createPatchFunction(backend) {
         return isDef(vnode.tag) // 一般组件的根vnode是div,就是可挂载的节点
     }
 
-    function invokeCreateHooks(vnode, insertedVnodeQueue) {
+    function invokeCreateHooks(vnode, insertedVnodeQueue) { // 调用所有模块的create方法
         for (let i = 0; i < cbs.create.length; ++i) {
             cbs.create[i](emptyNode, vnode)
         }

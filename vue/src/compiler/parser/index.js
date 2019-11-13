@@ -537,12 +537,16 @@ function processAttrs (el) {
   for (i = 0, l = list.length; i < l; i++) {
     name = rawName = list[i].name
     value = list[i].value
-    if (dirRE.test(name)) { // @click
+    if (dirRE.test(name)) { // @ v-
       // mark element as dynamic
-      el.hasBindings = true
+      el.hasBindings = true // 动态节点
       // modifiers
-      modifiers = parseModifiers(name) // 有没有click.stop这种
-      if (modifiers) {
+      modifiers = parseModifiers(name) // 有没有click.stop这种 ,处理修饰符
+      // modifiers:{
+      //  native:true,
+      //  prevent:true
+      // }
+      if (modifiers) { // 如果有modifiers，就把修饰符去了
         name = name.replace(modifierRE, '')
       }
       if (bindRE.test(name)) { // v-bind
@@ -574,7 +578,7 @@ function processAttrs (el) {
           addAttr(el, name, value)
         }
       } else if (onRE.test(name)) { // v-on
-        name = name.replace(onRE, '')
+        name = name.replace(onRE, '') // 去除了@
         addHandler(el, name, value, modifiers, false, warn) // 给el添加事件属性
       } else { // normal directives
         name = name.replace(dirRE, '')

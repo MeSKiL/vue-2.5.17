@@ -28,7 +28,7 @@ function normalizeEvents (on) {
 
 let target: any
 
-function createOnceHandler (handler, event, capture) {
+function createOnceHandler (handler, event, capture) { // 当事件执行过后，remove这个事件
   const _target = target // save current target element in closure
   return function onceHandler () {
     const res = handler.apply(null, arguments)
@@ -45,9 +45,11 @@ function add (
   capture: boolean,
   passive: boolean
 ) {
-  handler = withMacroTask(handler)
-  if (once) handler = createOnceHandler(handler, event, capture)
-  target.addEventListener(
+  //add(event.name, cur, event.once, event.capture, event.passive, event.params)
+  // cur是一个执行回调函数的函数
+  handler = withMacroTask(handler) // 事件，强制走macroTask，宏任务
+  if (once) handler = createOnceHandler(handler, event, capture) // 如果是once，再包装一次,执行一次后，remove掉
+  target.addEventListener( // 给dom绑定事件
     event,
     handler,
     supportsPassive
@@ -70,13 +72,13 @@ function remove (
 }
 
 function updateDOMListeners (oldVnode: VNodeWithData, vnode: VNodeWithData) {
-  if (isUndef(oldVnode.data.on) && isUndef(vnode.data.on)) {
+  if (isUndef(oldVnode.data.on) && isUndef(vnode.data.on)) { // 如果都没有on属性直接就return
     return
   }
   const on = vnode.data.on || {}
   const oldOn = oldVnode.data.on || {}
-  target = vnode.elm
-  normalizeEvents(on)
+  target = vnode.elm // 获取到vnode上的dom节点
+  normalizeEvents(on) // 处理v-model
   updateListeners(on, oldOn, add, remove, vnode.context)
   target = undefined
 }

@@ -2,7 +2,7 @@
 
 const fnExpRE = /^([\w$_]+|\([^)]*?\))\s*=>|^function\s*\(/
 const simplePathRE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\['[^']*?']|\["[^"]*?"]|\[\d+]|\[[A-Za-z_$][\w$]*])*$/
-
+// a.b a['b'] a["b"] a[0] a[b]
 // KeyboardEvent.keyCode aliases
 const keyCodes: { [key: string]: number | Array<number> } = {
   esc: 27,
@@ -34,7 +34,7 @@ const keyNames: { [key: string]: string | Array<string> } = {
 // #4868: modifiers that prevent the execution of the listener
 // need to explicitly return null so that we can determine whether to remove
 // the listener for .once
-const genGuard = condition => `if(${condition})return null;`
+const genGuard = condition => `if(${condition})return null;` // 守卫，不满足直接return
 
 const modifierCode: { [key: string]: string } = {
   stop: '$event.stopPropagation();',
@@ -54,8 +54,8 @@ export function genHandlers (
   isNative: boolean,
   warn: Function
 ): string {
-  let res = isNative ? 'nativeOn:{' : 'on:{'
-  for (const name in events) {
+  let res = isNative ? 'nativeOn:{' : 'on:{' // nativeOn 还是 on
+  for (const name in events) { // 遍历每个event的事件名，可能是对象，也可能是数组
     res += `"${name}":${genHandler(name, events[name])},`
   }
   return res.slice(0, -1) + '}'
@@ -87,14 +87,14 @@ function genHandler (
     return 'function(){}'
   }
 
-  if (Array.isArray(handler)) {
+  if (Array.isArray(handler)) { // 如果是数组就遍历数组，递归调用handler对象，逗号链接然后返回
     return `[${handler.map(handler => genHandler(name, handler)).join(',')}]`
   }
 
   const isMethodPath = simplePathRE.test(handler.value)
   const isFunctionExpression = fnExpRE.test(handler.value)
 
-  if (!handler.modifiers) {
+  if (!handler.modifiers) { // 如果没有修饰符，并且满足了正则，就返回handler.value
     if (isMethodPath || isFunctionExpression) {
       return handler.value
     }
@@ -102,13 +102,13 @@ function genHandler (
     if (__WEEX__ && handler.params) {
       return genWeexHandler(handler.params, handler.value)
     }
-    return `function($event){${handler.value}}` // inline statement
-  } else {
+    return `function($event){${handler.value}}` // inline statement 如果没有匹配到，比如handlerClick($event)，就会返回这种情况
+  } else { // 根据不同的modifiers的key做不同的逻辑
     let code = ''
     let genModifierCode = ''
     const keys = []
     for (const key in handler.modifiers) {
-      if (modifierCode[key]) {
+      if (modifierCode[key]) { // 如果满足，就生成对应的代码,stop就会往事件处理函数里插入阻止事件冒泡
         genModifierCode += modifierCode[key]
         // left/right
         if (keyCodes[key]) {
@@ -135,7 +135,7 @@ function genHandler (
     }
     const handlerCode = isMethodPath
       ? `return ${handler.value}($event)`
-      : isFunctionExpression
+      : isFunctionExpression // (()=>{xxx})()
         ? `return (${handler.value})($event)`
         : handler.value
     /* istanbul ignore if */

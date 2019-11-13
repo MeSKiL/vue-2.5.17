@@ -37,15 +37,15 @@ export type CodegenResult = {
   staticRenderFns: Array<string>
 };
 
-export function generate (
+export function generate ( // codegen
   ast: ASTElement | void,
   options: CompilerOptions
 ): CodegenResult {
   const state = new CodegenState(options)
-  const code = ast ? genElement(ast, state) : '_c("div")'
-  return {
+  const code = ast ? genElement(ast, state) : '_c("div")' // 有ast调用genElement,否则就是创建空div的代码块
+  return { // render是渲染vnode使用的
     render: `with(this){return ${code}}`,
-    staticRenderFns: state.staticRenderFns
+    staticRenderFns: state.staticRenderFns // staticRoot用的
   }
 }
 
@@ -129,26 +129,26 @@ export function genIf (
   altGen?: Function,
   altEmpty?: string
 ): string {
-  el.ifProcessed = true // avoid recursion
+  el.ifProcessed = true // avoid recursion 避免递归genIf
   return genIfConditions(el.ifConditions.slice(), state, altGen, altEmpty)
 }
 
-function genIfConditions (
+function genIfConditions ( // todo ifConditions里有否会有多个值
   conditions: ASTIfConditions,
   state: CodegenState,
   altGen?: Function,
   altEmpty?: string
 ): string {
-  if (!conditions.length) {
+  if (!conditions.length) { // 没有conditions直接返回_e()
     return altEmpty || '_e()'
   }
 
   const condition = conditions.shift()
-  if (condition.exp) {
+  if (condition.exp) { // 如果有exp就返回三元运算符这个代码块
     return `(${condition.exp})?${
-      genTernaryExp(condition.block)
+      genTernaryExp(condition.block) // 又会执行genElement，又会走到genIf。由于ifProcessed是true了，就不会进来了
     }:${
-      genIfConditions(conditions, state, altGen, altEmpty)
+      genIfConditions(conditions, state, altGen, altEmpty) // genIfConditions没值就会返回_e()
     }`
   } else {
     return `${genTernaryExp(condition.block)}`
@@ -181,7 +181,7 @@ export function genFor (
     el.tag !== 'template' &&
     !el.key
   ) {
-    state.warn(
+    state.warn( // 调用v-for的组件，没有key会警告
       `<${el.tag} v-for="${alias} in ${exp}">: component lists rendered with ` +
       `v-for should have explicit keys. ` +
       `See https://vuejs.org/guide/list.html#key for more info.`,
@@ -224,7 +224,9 @@ export function genData (el: ASTElement, state: CodegenState): string {
     data += `tag:"${el.tag}",`
   }
   // module data generation functions
-  for (let i = 0; i < state.dataGenFns.length; i++) {
+  for (let i = 0; i < state.dataGenFns.length; i++) { // web平台 class 和style都有genData
+    // 会给data添加staticClass和class
+    // 会给data添加staticStyle和style
     data += state.dataGenFns[i](el)
   }
   // attributes
@@ -388,7 +390,7 @@ export function genChildren (
       el.for &&
       el.tag !== 'template' &&
       el.tag !== 'slot'
-    ) {
+    ) { // 是唯一的children并且有el.for,就走genElement
       return (altGenElement || genElement)(el, state)
     }
     const normalizationType = checkSkip
