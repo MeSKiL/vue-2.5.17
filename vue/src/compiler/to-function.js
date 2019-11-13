@@ -17,7 +17,7 @@ function createFunction (code, errors) {
   }
 }
 
-export function createCompileToFunctionFn (compile: Function): Function {
+export function createCompileToFunctionFn (compile: Function): Function { // 有缓存就返回缓存 否则编译 将编译结果转为函数 存缓存
   const cache = Object.create(null)
 
   return function compileToFunctions (
@@ -25,15 +25,21 @@ export function createCompileToFunctionFn (compile: Function): Function {
     options?: CompilerOptions,
     vm?: Component
   ): CompiledFunctionResult {
+    // const { render, staticRenderFns } = compileToFunctions(template, { // 编译入口 实际上执行了to-function中的compileToFunctions
+    //   shouldDecodeNewlines,
+    //   shouldDecodeNewlinesForHref,
+    //   delimiters: options.delimiters,
+    //   comments: options.comments
+    // }, this)
     options = extend({}, options)
-    const warn = options.warn || baseWarn
+    const warn = options.warn || baseWarn // 拿到warn后删除options里的warn
     delete options.warn
 
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production') {
       // detect possible CSP restriction
       try {
-        new Function('return 1')
+        new Function('return 1') // 是否可以通过new Function将编译成的代码转换为函数，不能就警告
       } catch (e) {
         if (e.toString().match(/unsafe-eval|CSP/)) {
           warn(
@@ -50,13 +56,13 @@ export function createCompileToFunctionFn (compile: Function): Function {
     // check cache
     const key = options.delimiters
       ? String(options.delimiters) + template
-      : template
+      : template // 通过配置的分隔符，将template转化为key，然后缓存下来，因为编译是一个耗时的过程，所以缓存可以避免同一模板的多次编译
     if (cache[key]) {
       return cache[key]
     }
 
     // compile
-    const compiled = compile(template, options)
+    const compiled = compile(template, options) // 编译,compile的参数传入的,createCompiler中定义的compile
 
     // check compilation errors/tips
     if (process.env.NODE_ENV !== 'production') {
@@ -70,12 +76,12 @@ export function createCompileToFunctionFn (compile: Function): Function {
       if (compiled.tips && compiled.tips.length) {
         compiled.tips.forEach(msg => tip(msg, vm))
       }
-    }
+    } // 对errors和tips做一些处理
 
     // turn code into functions
     const res = {}
     const fnGenErrors = []
-    res.render = createFunction(compiled.render, fnGenErrors)
+    res.render = createFunction(compiled.render, fnGenErrors) // 将compiled编译后的render转换成render函数
     res.staticRenderFns = compiled.staticRenderFns.map(code => {
       return createFunction(code, fnGenErrors)
     })

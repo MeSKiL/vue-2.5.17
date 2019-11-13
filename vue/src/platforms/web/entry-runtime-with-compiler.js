@@ -74,7 +74,7 @@ Vue.prototype.$mount = function (
         mark('compile')
       }
 
-      const { render, staticRenderFns } = compileToFunctions(template, {
+      const { render, staticRenderFns } = compileToFunctions(template, { // 编译入口 实际上执行了to-function中的compileToFunctions
         shouldDecodeNewlines,
         shouldDecodeNewlinesForHref,
         delimiters: options.delimiters,

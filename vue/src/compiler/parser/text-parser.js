@@ -17,7 +17,7 @@ type TextParseResult = {
   tokens: Array<string | { '@binding': string }>
 }
 
-export function parseText (
+export function parseText ( // 解析文本
   text: string,
   delimiters?: [string, string]
 ): TextParseResult | void {
@@ -29,17 +29,17 @@ export function parseText (
   const rawTokens = []
   let lastIndex = tagRE.lastIndex = 0
   let match, index, tokenValue
-  while ((match = tagRE.exec(text))) {
+  while ((match = tagRE.exec(text))) { // 每次匹配的match.index是会变的
     index = match.index
     // push text token
-    if (index > lastIndex) {
+    if (index > lastIndex) { // 对非插值纯文本做解析
       rawTokens.push(tokenValue = text.slice(lastIndex, index))
       tokens.push(JSON.stringify(tokenValue))
     }
     // tag token
     const exp = parseFilters(match[1].trim())
-    tokens.push(`_s(${exp})`)
-    rawTokens.push({ '@binding': exp })
+    tokens.push(`_s(${exp})`) // _s(item)
+    rawTokens.push({ '@binding': exp }) // {@binding:"item"}
     lastIndex = index + match[0].length
   }
   if (lastIndex < text.length) {

@@ -1,23 +1,11 @@
-/* @flow */
+##optimizer
+optimizer主要是为了优化重新渲染过程中对静态节点的处理逻辑。patch中对静态节点是跳过的。
 
-import { makeMap, isBuiltInTag, cached, no } from 'shared/util'
+他主要做了两件事，第一是给深度遍历ast树ast元素递归打上static，第二是深度遍历ast树给ast的type为1的元素递归打上staticRoot
 
-let isStaticKey
-let isPlatformReservedTag
+来看看具体是怎么实现的
 
-const genStaticKeysCached = cached(genStaticKeys)
-
-/**
- * Goal of the optimizer: walk the generated template AST tree
- * and detect sub-trees that are purely static, i.e. parts of
- * the DOM that never needs to change.
- *
- * Once we detect these sub-trees, we can:
- *
- * 1. Hoist them into constants, so that we no longer need to
- *    create fresh nodes for them on each re-render;
- * 2. Completely skip them in the patching process.
- */
+```javascript 1.6
 export function optimize (root: ?ASTElement, options: CompilerOptions) {
   if (!root) return
   isStaticKey = genStaticKeysCached(options.staticKeys || '')
@@ -27,14 +15,15 @@ export function optimize (root: ?ASTElement, options: CompilerOptions) {
   // second pass: mark static roots.
   markStaticRoots(root, false) // 设置staticRoot，子节点不为唯一的type3节点
 }
+```
 
-function genStaticKeys (keys: string): Function {
-  return makeMap(
-    'type,tag,attrsList,attrsMap,plain,parent,children,attrs' +
-    (keys ? ',' + keys : '')
-  )
-}
+对root做markStatic,首先给node的static赋值了isStatic(node)
 
+isStatic的作用是 type2，也就是表达式肯定不是静态的就返回false type3肯定是静态的就返回true。
+
+type是1的话，如果是pre就是静态的。或者说，如果没有bind并且没有for和if，不是slot和component，是保留标签，不是v-for的子节点，并且key都是静态的，就是static的节点
+如果node的type是1，并且不是组件，就对子节点和ifConditions的block递归调用markStatic。如果子节点或者
+```javascript 1.6
 function markStatic (node: ASTNode) {
   node.static = isStatic(node)
   if (node.type === 1) {
@@ -66,7 +55,32 @@ function markStatic (node: ASTNode) {
     }
   }
 }
+```
 
+```javascript 1.6
+function isStatic (node: ASTNode): boolean {
+  if (node.type === 2) { // expression 表达式ast，不是静态的
+    return false
+  }
+  if (node.type === 3) { // text 纯文本或者注释ast，静态的
+    return true
+  }
+  return !!(node.pre || ( // type为1的时候
+      // 是pre就是静态的
+      // 没有bind的数据，没有if和for，不是slot component 是平台保留标签 不是v-for的子节点 node的key都满足是staticKey 才是静态节点
+    !node.hasBindings && // no dynamic bindings
+    !node.if && !node.for && // not v-if or v-for or v-else
+    !isBuiltInTag(node.tag) && // not a built-in
+    isPlatformReservedTag(node.tag) && // not a component
+    !isDirectChildOfTemplateFor(node) &&
+    Object.keys(node).every(isStaticKey)
+  ))
+}
+```
+
+markStaticRoots，其实更简单，如果node的type是1，并且是static的，并且子节点不是唯一的注释节点，就设置staticRoot为true。
+因为如果该节点是static的，那么他的子节点也一定是static的。因为markStatic中，子节点不为static，父节点就不为static。
+```javascript 1.6
 function markStaticRoots (node: ASTNode, isInFor: boolean) {
   if (node.type === 1) {
     if (node.static || node.once) {
@@ -96,35 +110,4 @@ function markStaticRoots (node: ASTNode, isInFor: boolean) {
     }
   }
 }
-
-function isStatic (node: ASTNode): boolean {
-  if (node.type === 2) { // expression 表达式ast，不是静态的
-    return false
-  }
-  if (node.type === 3) { // text 纯文本或者注释ast，静态的
-    return true
-  }
-  return !!(node.pre || ( // type为1的时候
-      // 是pre就是静态的
-      // 没有bind的数据，没有if和for，不是slot component 是平台保留标签 不是v-for的子节点 node的key都满足是staticKey 才是静态节点
-    !node.hasBindings && // no dynamic bindings
-    !node.if && !node.for && // not v-if or v-for or v-else
-    !isBuiltInTag(node.tag) && // not a built-in
-    isPlatformReservedTag(node.tag) && // not a component
-    !isDirectChildOfTemplateFor(node) &&
-    Object.keys(node).every(isStaticKey)
-  ))
-}
-
-function isDirectChildOfTemplateFor (node: ASTElement): boolean {
-  while (node.parent) {
-    node = node.parent
-    if (node.tag !== 'template') {
-      return false
-    }
-    if (node.for) {
-      return true
-    }
-  }
-  return false
-}
+```
