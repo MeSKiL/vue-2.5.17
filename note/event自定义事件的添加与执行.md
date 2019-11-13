@@ -1,10 +1,13 @@
 ##event自定义事件的添加与执行
 event的自定义事件其实很简单。他是从createComponent中的```const listeners = data.on```开始的。
 在createComponent的时候将data.on自定义事件赋值到listeners上去。
-然后listeners作为new Vnode的参数传了进去。在Vue初始化的时候的时候，eventsMixin首先在原型上挂载了$on方法，和$emit方法。
+然后listeners作为new Vnode的参数传了进去。
+
+在Vue初始化的时候的时候，eventsMixin首先在原型上挂载了$on方法，和$emit方法。
 这两个方法调用他们的时候再去看。啥时候调用呢？
 
-组件在init的时候走到initEvents。如果有listeners存在，就执行updateComponentListeners。
+组件在init的时候在initInternalComponent的时候获取listeners```opts._parentListeners = vnodeComponentOptions.listeners```
+走到initEvents，如果有listeners存在，就执行updateComponentListeners。
 ```javascript 1.6
 export function updateComponentListeners (
   vm: Component,
