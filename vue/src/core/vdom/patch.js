@@ -84,7 +84,14 @@ export function createPatchFunction(backend) {
             }
         }
     }
-    // cbs['create'] = [attrs.create,class.create,dom-props.create,event.create.style.create,transition.create] invokeCreateHooks 节点创建的时候执行
+    // 0: ƒ updateAttrs(oldVnode, vnode)
+    // 1: ƒ updateClass(oldVnode, vnode)
+    // 2: ƒ updateDOMListeners(oldVnode, vnode)
+    // 3: ƒ updateDOMProps(oldVnode, vnode)
+    // 4: ƒ updateStyle(oldVnode, vnode)
+    // 5: ƒ _enter(_, vnode)
+    // 6: ƒ create(_, vnode)
+    // 7: ƒ updateDirectives(oldVnode, vnode)
     // cbs['update'] = [xxx xxx xxx xxx] 节点更新的时候执行
     // 在patch过程中，遇到相对应的钩子就会执行相关的钩子函数
     // 初始化
@@ -333,6 +340,14 @@ export function createPatchFunction(backend) {
 
     function invokeCreateHooks(vnode, insertedVnodeQueue) { // 调用所有模块的create方法
         for (let i = 0; i < cbs.create.length; ++i) {
+            // 0: ƒ updateAttrs(oldVnode, vnode)
+            // 1: ƒ updateClass(oldVnode, vnode)
+            // 2: ƒ updateDOMListeners(oldVnode, vnode)
+            // 3: ƒ updateDOMProps(oldVnode, vnode)
+            // 4: ƒ updateStyle(oldVnode, vnode)
+            // 5: ƒ _enter(_, vnode)
+            // 6: ƒ create(_, vnode)
+            // 7: ƒ updateDirectives(oldVnode, vnode)
             cbs.create[i](emptyNode, vnode)
         }
         i = vnode.data.hook // Reuse variable

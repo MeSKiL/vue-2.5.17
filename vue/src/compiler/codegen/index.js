@@ -202,6 +202,8 @@ export function genData (el: ASTElement, state: CodegenState): string {
   // directives first.
   // directives may mutate the el's other properties before they are generated.
   const dirs = genDirectives(el, state)
+  // 组件有v-model就会给el上加上el.modal。返回undefined。
+  // 如果是普通节点，就会加个event和prop。返回修改过的dirs。directives[xxx]
   if (dirs) data += dirs + ','
 
   // key
@@ -254,7 +256,7 @@ export function genData (el: ASTElement, state: CodegenState): string {
     data += `${genScopedSlots(el.scopedSlots, state)},`
   }
   // component v-model
-  if (el.model) {
+  if (el.model) { // 组件的v-model情况,就会给data扩展一个。
     data += `model:{value:${
       el.model.value
     },callback:${
@@ -283,7 +285,7 @@ export function genData (el: ASTElement, state: CodegenState): string {
 }
 
 function genDirectives (el: ASTElement, state: CodegenState): string | void {
-  const dirs = el.directives
+  const dirs = el.directives // 获取directives
   if (!dirs) return
   let res = 'directives:['
   let hasRuntime = false
@@ -291,8 +293,8 @@ function genDirectives (el: ASTElement, state: CodegenState): string | void {
   for (i = 0, l = dirs.length; i < l; i++) {
     dir = dirs[i]
     needRuntime = true
-    const gen: DirectiveFunction = state.directives[dir.name]
-    if (gen) {
+    const gen: DirectiveFunction = state.directives[dir.name] // 通过指令名称获取function，也就是state.directives[model],web平台实际上是platforms/web/compiler/directives/model
+    if (gen) { // 如果gen存在就执行gen
       // compile-time directive that manipulates AST.
       // returns true if it also needs a runtime counterpart.
       needRuntime = !!gen(el, dir, state.warn)

@@ -427,6 +427,7 @@ export function mergeOptions ( // 将child和parent合并
  * to assets defined in its ancestor chain.
  */
 export function resolveAsset ( // _createElement的时候执行  initGlobalApi的时候 initAssetRegisters 在options的components[id]上赋值了构造器
+    // normalizeDirectives的时候执行，找各种形式的结果返回
   options: Object, // vm.$options
   type: string,
   id: string,

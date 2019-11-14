@@ -165,6 +165,7 @@ export function createComponent ( // _createElement中执行
 
   // transform component v-model data into props & events
   if (isDef(data.model)) { // v-model
+    // 把v-modal是数据转换成props和event
     transformModel(Ctor.options, data)
   }
 
@@ -277,9 +278,9 @@ function mergeHook (f1: any, f2: any): Function {
 
 // transform component v-model info (value and callback) into
 // prop and event handler respectively.
-function transformModel (options, data: any) {
-  const prop = (options.model && options.model.prop) || 'value'
-  const event = (options.model && options.model.event) || 'input'
+function transformModel (options, data: any) { // 添加key为value的prop，和input的event，有input就concat
+  const prop = (options.model && options.model.prop) || 'value' // 如果子组件有定义model并且有prop就直接用定义的prop
+  const event = (options.model && options.model.event) || 'input' // event同理
   ;(data.props || (data.props = {}))[prop] = data.model.value
   const on = data.on || (data.on = {})
   if (isDef(on[event])) {

@@ -11,13 +11,13 @@ let warn
 export const RANGE_TOKEN = '__r'
 export const CHECKBOX_RADIO_TOKEN = '__c'
 
-export default function model (
+export default function model ( // genDirectives中 v-model情况下的gen
   el: ASTElement,
   dir: ASTDirective,
   _warn: Function
 ): ?boolean {
   warn = _warn
-  const value = dir.value
+  const value = dir.value // v-model="message" value === message
   const modifiers = dir.modifiers
   const tag = el.tag
   const type = el.attrsMap.type
@@ -25,7 +25,7 @@ export default function model (
   if (process.env.NODE_ENV !== 'production') {
     // inputs with type="file" are read only and setting the input's
     // value will throw an error.
-    if (tag === 'input' && type === 'file') {
+    if (tag === 'input' && type === 'file') { // 如果是file类型的input就警告
       warn(
         `<${el.tag} v-model="${value}" type="file">:\n` +
         `File inputs are read only. Use a v-on:change listener instead.`
@@ -122,7 +122,7 @@ function genSelect (
   addHandler(el, 'change', code, null, true)
 }
 
-function genDefaultModel (
+function genDefaultModel ( // 如果是input输入类型的或者textarea类型的
   el: ASTElement,
   value: string,
   modifiers: ?ASTModifiers
@@ -132,7 +132,7 @@ function genDefaultModel (
   // warn if v-bind:value conflicts with v-model
   // except for inputs with v-bind:type
   if (process.env.NODE_ENV !== 'production') {
-    const value = el.attrsMap['v-bind:value'] || el.attrsMap[':value']
+    const value = el.attrsMap['v-bind:value'] || el.attrsMap[':value'] // 如果v-model和v-bind一起用会警告冲突
     const typeBinding = el.attrsMap['v-bind:type'] || el.attrsMap[':type']
     if (value && !typeBinding) {
       const binding = el.attrsMap['v-bind:value'] ? 'v-bind:value' : ':value'
@@ -144,8 +144,11 @@ function genDefaultModel (
   }
 
   const { lazy, number, trim } = modifiers || {}
-  const needCompositionGuard = !lazy && type !== 'range'
-  const event = lazy
+  // 修饰符里的lazy 失去焦点才更新
+  // number将字符串转为number类型
+  // trim 过滤首尾空格
+  const needCompositionGuard = !lazy && type !== 'range' // 滑块
+  const event = lazy // 如果是lazy 事件就是change，如果不是lazy，但是type是range，事件就是range_token，不然就是input
     ? 'change'
     : type === 'range'
       ? RANGE_TOKEN
@@ -160,12 +163,15 @@ function genDefaultModel (
   }
 
   let code = genAssignmentCode(value, valueExpression)
-  if (needCompositionGuard) {
+  // value=valueExpression 或者 $set(exp,key,assignment)
+  if (needCompositionGuard) { // 不是lazy也不是滑块
     code = `if($event.target.composing)return;${code}`
   }
 
-  addProp(el, 'value', `(${value})`)
-  addHandler(el, event, code, null, true)
+  addProp(el, 'value', `(${value})`) // 给el加上value这个props
+  addHandler(el, event, code, null, true) // 给el加上@input事件
+  // :value='message'
+  // @input='message=$event.target.value'
   if (trim || number) {
     addHandler(el, 'blur', '$forceUpdate()')
   }

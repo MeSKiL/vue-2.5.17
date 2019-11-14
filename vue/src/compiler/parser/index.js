@@ -581,15 +581,17 @@ function processAttrs (el) {
         name = name.replace(onRE, '') // 去除了@
         addHandler(el, name, value, modifiers, false, warn) // 给el添加事件属性
       } else { // normal directives
-        name = name.replace(dirRE, '')
+        // 有v- 不是v-if 不是v-for 不是v-on 不是 v-bind
+        // v-text v-html v-model
+        name = name.replace(dirRE, '') // v-model的name就是model
         // parse arg
         const argMatch = name.match(argRE)
         const arg = argMatch && argMatch[1]
         if (arg) {
           name = name.slice(0, -(arg.length + 1))
         }
-        addDirective(el, name, rawName, value, arg, modifiers)
-        if (process.env.NODE_ENV !== 'production' && name === 'model') {
+        addDirective(el, name, rawName, value, arg, modifiers) // 把参数放入el.directives数组中
+        if (process.env.NODE_ENV !== 'production' && name === 'model') { // 非生产的v-model会走这个逻辑
           checkForAliasModel(el, value)
         }
       }
@@ -686,7 +688,7 @@ function guardIESVGBug (attrs) {
 function checkForAliasModel (el, value) {
   let _el = el
   while (_el) {
-    if (_el.for && _el.alias === value) {
+    if (_el.for && _el.alias === value) { // v-mode不能和v-for一起使用
       warn(
         `<${el.tag} v-model="${value}">: ` +
         `You are binding v-model directly to a v-for iteration alias. ` +

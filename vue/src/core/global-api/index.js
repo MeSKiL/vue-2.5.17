@@ -51,6 +51,7 @@ export function initGlobalAPI(Vue: GlobalAPI) { // 给vue增加了各种api
         // 'filter'
         Vue.options[type + 's'] = Object.create(null)
     }) // 挂载到Vue.options下
+    // 初始化了Vue.options.directives
 
     // this is used to identify the "base" constructor to extend all plain-object
     // components with in Weex's multi-instance scenarios.

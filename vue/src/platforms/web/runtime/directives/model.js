@@ -20,7 +20,7 @@ if (isIE9) {
 }
 
 const directive = {
-  inserted (el, binding, vnode, oldVnode) {
+  inserted (el, binding, vnode, oldVnode) { // patch时走insert的时候，会走到这里
     if (vnode.tag === 'select') {
       // #6903
       if (oldVnode.elm && !oldVnode.elm._vOptions) {
@@ -31,9 +31,10 @@ const directive = {
         setSelected(el, binding, vnode.context)
       }
       el._vOptions = [].map.call(el.options, getValue)
-    } else if (vnode.tag === 'textarea' || isTextInputType(el.type)) {
+    } else if (vnode.tag === 'textarea' || isTextInputType(el.type)) { // 是input type的时候
+      // makeMap('text,number,password,search,email,tel,url')
       el._vModifiers = binding.modifiers
-      if (!binding.modifiers.lazy) {
+      if (!binding.modifiers.lazy) { // 如果不是lazy
         el.addEventListener('compositionstart', onCompositionStart)
         el.addEventListener('compositionend', onCompositionEnd)
         // Safari < 10.2 & UIWebView doesn't fire compositionend when
@@ -49,7 +50,7 @@ const directive = {
     }
   },
 
-  componentUpdated (el, binding, vnode) {
+  componentUpdated (el, binding, vnode) { // 仅仅针对select
     if (vnode.tag === 'select') {
       setSelected(el, binding, vnode.context)
       // in case the options rendered by v-for have changed,
@@ -126,22 +127,27 @@ function getValue (option) {
     ? option._value
     : option.value
 }
-
-function onCompositionStart (e) {
+// codegen中
+// if (needCompositionGuard) { // 不是lazy也不是滑块
+//   code = `if($event.target.composing)return;${code}`
+// }
+function onCompositionStart (e) { // compositionStart的时候，把composing设置为true，就会直接return
   e.target.composing = true
 }
 
-function onCompositionEnd (e) {
+function onCompositionEnd (e) { // compositionEnd的时候，会把composing设置为false，就会执行code。
+  // 这里就是v-model的处理，如果是v-model，在composition的时候是不会执行code的。也就是输入中文的时候，没输完不会双向绑定的意思。
+
   // prevent triggering an input event for no reason
   if (!e.target.composing) return
   e.target.composing = false
-  trigger(e.target, 'input')
+  trigger(e.target, 'input') // 生成原生的dom事件并派发
 }
 
 function trigger (el, type) {
   const e = document.createEvent('HTMLEvents')
   e.initEvent(type, true, true)
-  el.dispatchEvent(e)
+  el.dispatchEvent(e) // 就会执行input的回调
 }
 
 export default directive

@@ -3,7 +3,7 @@
 /**
  * Cross-platform code generation for component v-model
  */
-export function genComponentModel (
+export function genComponentModel ( // 组件的v-model会
   el: ASTElement,
   value: string,
   modifiers: ?ASTModifiers
@@ -23,7 +23,7 @@ export function genComponentModel (
   }
   const assignment = genAssignmentCode(value, valueExpression)
 
-  el.model = {
+  el.model = { // 给ast节点创建了个model属性
     value: `(${value})`,
     expression: `"${value}"`,
     callback: `function (${baseValueExpression}) {${assignment}}`
@@ -37,8 +37,8 @@ export function genAssignmentCode (
   value: string,
   assignment: string
 ): string {
-  const res = parseModel(value)
-  if (res.key === null) {
+  const res = parseModel(value) // 对复杂的value进行处理,返回一个对象
+  if (res.key === null) { // 如果key为null，就会返回value=assignment
     return `${value}=${assignment}`
   } else {
     return `$set(${res.exp}, ${res.key}, ${assignment})`
