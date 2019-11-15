@@ -108,3 +108,6 @@ export function renderSlot (
 ```
 其实slot就是把自己的父占位符下的节点，插到了自己的slot所在的位置。其实也是自己和自己的通信，只不过一个是在父占位符下的。
 一个是在组件内部的。
+
+普通插槽说白了就是，在父组件的时候，把有slot的放到指定的$slot[name]里，没有的放到$slot[default]里。
+在子组件创建的时候，通过slot节点的name去指定的$slot[name]拿相应的节点。
