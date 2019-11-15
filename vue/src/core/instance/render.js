@@ -74,8 +74,10 @@ export function renderMixin (Vue: Class<Component>) { // instance/index
       }
     }
 
-    if (_parentVnode) {
+    if (_parentVnode) { // 走render的时候，拿到了父占位符节点的scopedSlots
       vm.$scopedSlots = _parentVnode.data.scopedSlots || emptyObject
+      // {scopedSlots:_u([{key:"default",fn:function(props){return [_c('p',[_v("Hello from parent")]),_c('p',[_v(_s(props.text + props.msg))])]}}])
+      // scopedSlots就是u方法的返回值，是key对应fn的对象。
     }
 
     // set parent vnode. this allows render functions to have access

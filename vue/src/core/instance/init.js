@@ -104,7 +104,7 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   const vnodeComponentOptions = parentVnode.componentOptions // 将父组件实例的componentOptions中的一些属性赋值给opts
   opts.propsData = vnodeComponentOptions.propsData
   opts._parentListeners = vnodeComponentOptions.listeners // 自定义事件赋值给opts._parentListeners
-  opts._renderChildren = vnodeComponentOptions.children
+  opts._renderChildren = vnodeComponentOptions.children // 拿到父占位符节点的_renderChildren
   opts._componentTag = vnodeComponentOptions.tag
 
   if (options.render) {

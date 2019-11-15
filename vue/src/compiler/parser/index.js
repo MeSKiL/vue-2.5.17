@@ -115,7 +115,7 @@ export function parse (
     shouldDecodeNewlines: options.shouldDecodeNewlines,
     shouldDecodeNewlinesForHref: options.shouldDecodeNewlinesForHref,
     shouldKeepComment: options.comments,
-    start (tag, attrs, unary) {
+    start (tag, attrs, unary) { // attrs在parseHTML里已经存好了。这里要处理了
       // 标签，属性，是否是自闭合标签 handleStartTag中会执行
       // 创建ast树，以及ast树管理
       // check namespace.
@@ -163,7 +163,7 @@ export function parse (
       } else if (!element.processed) {
         // structural directives
 
-        // 对element做扩展
+        // 对element做扩展 el上加上 for if once
         processFor(element)
         processIf(element)
         processOnce(element)
@@ -212,9 +212,9 @@ export function parse (
         if (element.elseif || element.else) {
           processIfConditions(element, currentParent)
         } else if (element.slotScope) { // scoped slot
-          currentParent.plain = false
+          currentParent.plain = false // 如果是slotScope，就拿到name，并且不添加到父节点的子节点中
           const name = element.slotTarget || '"default"'
-          ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
+          ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element // 而是作为父节点的scopedSlots的name属性
         } else {
           currentParent.children.push(element) // 父的children要push子的
           element.parent = currentParent // 子的parent指向父的
@@ -331,15 +331,15 @@ export function processElement (element: ASTElement, options: CompilerOptions) {
   // removing structural attributes
   element.plain = !element.key && !element.attrsList.length
 
-  processRef(element)
-  processSlot(element)
-  processComponent(element)
+  processRef(element) // el.ref
+  processSlot(element) // 处理slot
+  processComponent(element) // 有el的is就增加el.component
   for (let i = 0; i < transforms.length; i++) {
     // class transformNode 赋el.staticClass和el.classBinding
     // style transformNode 赋el.staticStyle和el.styleBinding
     element = transforms[i](element, options) || element
   } // 去除了element里的class和style
-  processAttrs(element)
+  processAttrs(element) // 处理attrs里面的属性。
 }
 
 function processKey (el) {
@@ -474,7 +474,8 @@ function processOnce (el) {
 
 function processSlot (el) {
   if (el.tag === 'slot') {
-    el.slotName = getBindingAttr(el, 'name')
+    // <slot name="header" />
+    el.slotName = getBindingAttr(el, 'name') // 给slot节点加上slotName属性 header
     if (process.env.NODE_ENV !== 'production' && el.key) {
       warn(
         `\`key\` does not work on <slot> because slots are abstract outlets ` +
@@ -482,7 +483,7 @@ function processSlot (el) {
         `Use the key on a wrapping element instead.`
       )
     }
-  } else {
+  } else { // 给slot节点加上slotScope属性
     let slotScope
     if (el.tag === 'template') {
       slotScope = getAndRemoveAttr(el, 'scope')
@@ -497,7 +498,7 @@ function processSlot (el) {
         )
       }
       el.slotScope = slotScope || getAndRemoveAttr(el, 'slot-scope')
-    } else if ((slotScope = getAndRemoveAttr(el, 'slot-scope'))) {
+    } else if ((slotScope = getAndRemoveAttr(el, 'slot-scope'))) { // 不是template也能拿到slotScope
       /* istanbul ignore if */
       if (process.env.NODE_ENV !== 'production' && el.attrsMap['v-for']) {
         warn(
@@ -509,13 +510,14 @@ function processSlot (el) {
       }
       el.slotScope = slotScope
     }
-    const slotTarget = getBindingAttr(el, 'slot')
+    const slotTarget = getBindingAttr(el, 'slot') // 获取slot绑定的值
+    // <h1 slot='header'>{{title}}</h1> slotTarget = slot
     if (slotTarget) {
-      el.slotTarget = slotTarget === '""' ? '"default"' : slotTarget
+      el.slotTarget = slotTarget === '""' ? '"default"' : slotTarget // 如果是空就赋值default
       // preserve slot as an attribute for native shadow DOM compat
       // only for non-scoped slots.
       if (el.tag !== 'template' && !el.slotScope) {
-        addAttr(el, 'slot', slotTarget)
+        addAttr(el, 'slot', slotTarget) // 在el上加上slot属性
       }
     }
   }
@@ -532,6 +534,7 @@ function processComponent (el) {
 }
 
 function processAttrs (el) {
+  // 处理v-on v-bind v-model v-text v-html 以及其他一些属性
   const list = el.attrsList
   let i, l, name, rawName, value, modifiers, isProp
   for (i = 0, l = list.length; i < l; i++) {

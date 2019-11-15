@@ -283,7 +283,7 @@ export function updateChildComponent ( //在组件的prepatch中执行,组件更
   updateComponentListeners(vm, listeners, oldListeners)
 
   // resolve slots + force update if has children
-  if (hasChildren) {
+  if (hasChildren) { // 如果是slot的情况，会根据新的值重新去计算slot，然后强制更新
     vm.$slots = resolveSlots(renderChildren, parentVnode.context)
     vm.$forceUpdate()
   }

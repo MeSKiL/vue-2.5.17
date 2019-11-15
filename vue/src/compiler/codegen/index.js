@@ -60,7 +60,7 @@ export function genElement (el: ASTElement, state: CodegenState): string {
     return genIf(el, state)
   } else if (el.tag === 'template' && !el.slotTarget) {
     return genChildren(el, state) || 'void 0'
-  } else if (el.tag === 'slot') {
+  } else if (el.tag === 'slot') { // slot节点会走genSlot
     return genSlot(el, state)
   } else {
     // component or element
@@ -248,12 +248,14 @@ export function genData (el: ASTElement, state: CodegenState): string {
   }
   // slot target
   // only for non-scoped slots
-  if (el.slotTarget && !el.slotScope) {
+  if (el.slotTarget && !el.slotScope) { // 有slotTarget，就会给data拼接slot属性
     data += `slot:${el.slotTarget},`
   }
   // scoped slots
-  if (el.scopedSlots) {
+  if (el.scopedSlots) { // 有scopedSlots就会执行genScopedSlots
     data += `${genScopedSlots(el.scopedSlots, state)},`
+    //    '<template slot-scope="props"><p>Hello from parent</p><p>{{ props.text + props.msg}}</p></template>'
+    // {scopedSlots:_u([{key:"default",fn:function(props){return [_c('p',[_v("Hello from parent")]),_c('p',[_v(_s(props.text + props.msg))])]}}])
   }
   // component v-model
   if (el.model) { // 组件的v-model情况,就会给data扩展一个。
@@ -337,7 +339,7 @@ function genScopedSlots (
   state: CodegenState
 ): string {
   return `scopedSlots:_u([${
-    Object.keys(slots).map(key => {
+    Object.keys(slots).map(key => { // 每个key执行genScopedSlot
       return genScopedSlot(key, slots[key], state)
     }).join(',')
   }])`
@@ -351,8 +353,10 @@ function genScopedSlot (
   if (el.for && !el.forProcessed) {
     return genForScopedSlot(key, el, state)
   }
+  // <template slot-scope="props">
+  // el.slotScope = props
   const fn = `function(${String(el.slotScope)}){` +
-    `return ${el.tag === 'template'
+    `return ${el.tag === 'template' // 如果是template就返回子节点。
       ? el.if
         ? `${el.if}?${genChildren(el, state) || 'undefined'}:undefined`
         : genChildren(el, state) || 'undefined'
@@ -459,7 +463,7 @@ export function genComment (comment: ASTText): string {
 
 function genSlot (el: ASTElement, state: CodegenState): string {
   const slotName = el.slotName || '"default"'
-  const children = genChildren(el, state)
+  const children = genChildren(el, state) // 取插槽下的子节点,未来作为默认节点
   let res = `_t(${slotName}${children ? `,${children}` : ''}`
   const attrs = el.attrs && `{${el.attrs.map(a => `${camelize(a.name)}:${a.value}`).join(',')}}`
   const bind = el.attrsMap['v-bind']
@@ -472,6 +476,7 @@ function genSlot (el: ASTElement, state: CodegenState): string {
   if (bind) {
     res += `${attrs ? '' : ',null'},${bind}`
   }
+  // 拼接属性和bind
   return res + ')'
 }
 

@@ -6,6 +6,8 @@ import type VNode from 'core/vdom/vnode'
  * Runtime helper for resolving raw children VNodes into a slot object.
  */
 export function resolveSlots (
+    // 会在initRender里执行，也会在updateChildComponent的时候执行
+    // 将节点根据插槽name，放入相对的的slot[name]中
   children: ?Array<VNode>,
   context: ?Component
 ): { [key: string]: Array<VNode> } {
@@ -13,26 +15,26 @@ export function resolveSlots (
   if (!children) {
     return slots
   }
-  for (let i = 0, l = children.length; i < l; i++) {
+  for (let i = 0, l = children.length; i < l; i++) { // 遍历children
     const child = children[i]
     const data = child.data
     // remove slot attribute if the node is resolved as a Vue slot node
-    if (data && data.attrs && data.attrs.slot) {
+    if (data && data.attrs && data.attrs.slot) { // 如果有slot就把这个属性删了
       delete data.attrs.slot
     }
     // named slots should only be respected if the vnode was rendered in the
     // same context.
-    if ((child.context === context || child.fnContext === context) &&
+    if ((child.context === context || child.fnContext === context) && // 占位符节点和子节点的实例是一样的
       data && data.slot != null
     ) {
       const name = data.slot
-      const slot = (slots[name] || (slots[name] = []))
+      const slot = (slots[name] || (slots[name] = [])) // 如果slot[name]不存在就新建一个空数组，把child push进slot[name]中
       if (child.tag === 'template') {
         slot.push.apply(slot, child.children || [])
       } else {
         slot.push(child)
       }
-    } else {
+    } else { // 默认插槽是不写slot的，就push到default中
       (slots.default || (slots.default = [])).push(child)
     }
   }
@@ -49,7 +51,7 @@ function isWhitespace (node: VNode): boolean {
   return (node.isComment && !node.asyncFactory) || node.text === ' '
 }
 
-export function resolveScopedSlots (
+export function resolveScopedSlots ( // 返回一个对象，key对应fn
   fns: ScopedSlotsData, // see flow/vnode
   res?: Object
 ): { [key: string]: Function } {

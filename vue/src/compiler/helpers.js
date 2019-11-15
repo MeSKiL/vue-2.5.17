@@ -129,11 +129,11 @@ export function getBindingAttr (
 ): ?string {
   const dynamicValue =
     getAndRemoveAttr(el, ':' + name) ||
-    getAndRemoveAttr(el, 'v-bind:' + name)
+    getAndRemoveAttr(el, 'v-bind:' + name) // 获取动态绑定的值
   if (dynamicValue != null) {
     return parseFilters(dynamicValue)
   } else if (getStatic !== false) {
-    const staticValue = getAndRemoveAttr(el, name)
+    const staticValue = getAndRemoveAttr(el, name) // 获取静态的值
     if (staticValue != null) {
       return JSON.stringify(staticValue)
     }
