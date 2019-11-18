@@ -348,7 +348,7 @@ export function stateMixin (Vue: Class<Component>) { // instance/index
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
 
-  Vue.prototype.$watch = function (
+  Vue.prototype.$watch = function ( // 用来higher order function 比如节流函数。
     expOrFn: string | Function,
     cb: any,
     options?: Object

@@ -27,8 +27,9 @@ export function initLifecycle (vm: Component) { // 在_init的时候执行
 
   // locate first non-abstract parent
   let parent = options.parent // parent实际上是activeInstance,也就是当前vue的实例,作为parent
-  if (parent && !options.abstract) {
-    while (parent.$options.abstract && parent.$parent) {
+  if (parent && !options.abstract) { // 父子组件的关系中不会包含抽象组件，也就是没有keep-alive这种组件
+    // 把当前实例放到符合要求的父组件的children中
+    while (parent.$options.abstract && parent.$parent) { // 父组件是abstract并且父组件有父组件，就取父组件的父组件。知道父组件不是abstract为止。
       parent = parent.$parent
     }
     parent.$children.push(vm) // parent的children就会push当前的vm
@@ -284,6 +285,7 @@ export function updateChildComponent ( //在组件的prepatch中执行,组件更
 
   // resolve slots + force update if has children
   if (hasChildren) { // 如果是slot的情况，会根据新的值重新去计算slot，然后强制更新
+    // keep-alive的情况，patchVnode的时候走到组件prepatch的时候走到这里，然后更新slot后强制更新，keepAlive。然后如果命中cacha，就复用缓存中的节点。
     vm.$slots = resolveSlots(renderChildren, parentVnode.context)
     vm.$forceUpdate()
   }
@@ -300,7 +302,7 @@ function isInInactiveTree (vm) {
   return false
 }
 
-export function activateChildComponent (vm: Component, direct?: boolean) {
+export function activateChildComponent (vm: Component, direct?: boolean) { // 执行keepAlive组件的activated的时候也会执行子的keepAlive组件的activated。并且确保只执行一次。
   if (direct) {
     vm._directInactive = false
     if (isInInactiveTree(vm)) {
@@ -327,7 +329,7 @@ export function deactivateChildComponent (vm: Component, direct?: boolean) {
   }
   if (!vm._inactive) {
     vm._inactive = true
-    for (let i = 0; i < vm.$children.length; i++) {
+    for (let i = 0; i < vm.$children.length; i++) { // 递归子组件是keepAlive都执行deactivated
       deactivateChildComponent(vm.$children[i])
     }
     callHook(vm, 'deactivated')

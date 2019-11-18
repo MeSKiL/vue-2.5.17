@@ -211,7 +211,7 @@ export function createPatchFunction(backend) {
                 if (isDef(data)) { // 创建完子节点后调用invokeCreateHooks
                     invokeCreateHooks(vnode, insertedVnodeQueue) // 插入insert hook
                 }
-                insert(parentElm, vnode.elm, refElm)
+                insert(parentElm, vnode.elm, refElm) // 插入子节点
             }
 
             if (process.env.NODE_ENV !== 'production' && data && data.pre) {
@@ -234,7 +234,8 @@ export function createPatchFunction(backend) {
         let i = vnode.data
         if (isDef(i)) { // 如果vnode的data存在
             const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
-            if (isDef(i = i.hook) && isDef(i = i.init)) {
+            // keepAlive的子组件已经有实例了，并且keepAlive也是true，这时候走init，对子组件进行prepatch，就不会走子组件的的mount了
+            if (isDef(i = i.hook) && isDef(i = i.init)) { // 这里会通过递归挂载上所有的子组件
                 // 如果data.hook存在，并且有hook中有init方法，就调用init方法,执行了组件上的init(createElement中createComponent merge hook时 merge的init方法)方法
                 i(vnode, false /* hydrating */) // 递归的方式不断patch子组件
                 // 将遇到的组件实例化
@@ -256,7 +257,10 @@ export function createPatchFunction(backend) {
             // 子组件patch完成后$el是有值的
             if (isDef(vnode.componentInstance)) {
                 initComponent(vnode, insertedVnodeQueue)
-                insert(parentElm, vnode.elm, refElm) // 子组件先插入,先子后父
+                // 设置vnode的elm，keep-alive的子组件没有parentElm，就不挂载。keep-alive的elm也是子组件的elm。然后挂载上去。
+                insert(parentElm, vnode.elm, refElm)
+                // 把子组件挂载在parentElm上。在createElm外面删除老节点
+                // 子组件先插入,先子后父
                 if (isTrue(isReactivated)) {
                     reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm)
                 }
@@ -392,7 +396,7 @@ export function createPatchFunction(backend) {
     function invokeDestroyHook(vnode) {
         let i, j
         const data = vnode.data
-        if (isDef(data)) {
+        if (isDef(data)) { // 调用销毁钩子
             if (isDef(i = data.hook) && isDef(i = i.destroy)) i(vnode)
             for (i = 0; i < cbs.destroy.length; ++i) cbs.destroy[i](vnode)
         }
@@ -821,6 +825,7 @@ export function createPatchFunction(backend) {
                 // update parent placeholder node element, recursively
                 if (isDef(vnode.parent)) { // vnode.parent是占位符节点
                     // 更新占位符节点，让占位符节点的elm指向新的vnode的elm，并执行一些hook
+                    // keep-alive的情况，就会把keep-alive占位符节点指向component-a的实例 || component-b的实例
                     let ancestor = vnode.parent
                     const patchable = isPatchable(vnode) // 当前渲染的节点是不是可挂载的
                     while (ancestor) { // 如果占位符存在
@@ -858,7 +863,7 @@ export function createPatchFunction(backend) {
             }
         }
 
-        invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch) // 执行insert hook
+        invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch) // 执行子组件的insert hook
         return vnode.elm
     }
 }

@@ -39,7 +39,7 @@ const componentVNodeHooks = { // 组件默认会有四个钩子
       vnode.componentInstance &&
       !vnode.componentInstance._isDestroyed &&
       vnode.data.keepAlive
-    ) {
+    ) { // keepAlive的话就走prepatch，就不会重新创建了。
       // kept-alive components, treat as a patch
       const mountedNode: any = vnode // work around flow
       componentVNodeHooks.prepatch(mountedNode, mountedNode)
@@ -72,13 +72,14 @@ const componentVNodeHooks = { // 组件默认会有四个钩子
       callHook(componentInstance, 'mounted')
     }
     if (vnode.data.keepAlive) {
+      // 组件的首次渲染你直接执行生命周期。如果的更新，就在flushSchedulerQueue中执行
       if (context._isMounted) {
         // vue-router#1212
         // During updates, a kept-alive component's child components may
         // change, so directly walking the tree here may call activated hooks
         // on incorrect children. Instead we push them into a queue which will
         // be processed after the whole patch process ended.
-        queueActivatedComponent(componentInstance)
+        queueActivatedComponent(componentInstance) // 如果是keepAlive，并且已经挂载了，就会走queueActivatedComponent
       } else {
         activateChildComponent(componentInstance, true /* direct */)
       }
@@ -90,7 +91,7 @@ const componentVNodeHooks = { // 组件默认会有四个钩子
     if (!componentInstance._isDestroyed) {
       if (!vnode.data.keepAlive) {
         componentInstance.$destroy()
-      } else {
+      } else { // 销毁(隐藏)keepAlive
         deactivateChildComponent(componentInstance, true /* direct */)
       }
     }
