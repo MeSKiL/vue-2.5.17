@@ -15,6 +15,7 @@ export function renderSlot ( // 子组件的时候render的时候执行的，_t�
   // 实际上this.$scopedSlots是key对应fn的对象
   let nodes
   if (scopedSlotFn) { // scoped slot
+    // 作用域slot是在父节点的时候把节点生成function，在子节点的时候创建的。
     props = props || {}
     if (bindObject) {
       if (process.env.NODE_ENV !== 'production' && !isObject(bindObject)) {
@@ -27,7 +28,7 @@ export function renderSlot ( // 子组件的时候render的时候执行的，_t�
     } // 子组件通过函数调用的方式创建nodes，将父组件的children保留下来，延迟到子组件render的时候取生成。随意也就可以访问到props的内容
     // scoped下的children，会在子组件render的时候创建，所以环境是子组件的环境
     nodes = scopedSlotFn(props) || fallback // 执行以后就返回 一个对象 key对应fn
-  } else {
+  } else { // 默认slot是从$slots[name]拿nodes，在父节点创建的时候，就push进去了。
     const slotNodes = this.$slots[name] // 在initRender的时候绑了$slots，$slots走了resolveSlots方法，其实就是将有slot的节点,push到对象的slot数组里，然后合成一个对象。
     // $slot:{
     //    header:[vnode,vnode],
