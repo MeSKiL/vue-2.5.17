@@ -61,7 +61,7 @@ export function addHandler ( // 给el添加事件属性，nativeEvents或是even
 
   let events
   if (modifiers.native) { // modifiers有native的时候，event就会指向nativeEvents
-    // native就是给组件绑click的时候，没native是不执行的
+    // native就是给组件绑click的时候，没native是不执行的，
     delete modifiers.native
     events = el.nativeEvents || (el.nativeEvents = {}) // native的event在el.nativeEvents里
   } else {
