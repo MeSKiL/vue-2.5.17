@@ -329,3 +329,5 @@ insert逻辑,enter是在create里执行的，patch结束后就会执行到insert
 那最后来说cb干了啥。很简单，删除了toClass和activeClass。最后走afterEnterHook。或者enterCancelledHook。
 
 这里就会有一个现象就是，如果在enterHook里执行了done，那就会在nextFrame加上toClass这个类。并没有删除，最后的dom结构中也就会有toClass类的。
+
+transition其实是管理class。去发现目标元素是不是应用了过渡或动画，在合适的时机增加删除css类名，以及调用钩子函数。
