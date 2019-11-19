@@ -44,13 +44,13 @@ export function extractTransitionData (comp: Component): Object {
   const data = {}
   const options: ComponentOptions = comp.$options
   // props
-  for (const key in options.propsData) {
+  for (const key in options.propsData) { // 把prop赋值给data
     data[key] = comp[key]
   }
   // events.
   // extract listeners and pass them directly to the transition methods
   const listeners: ?Object = options._parentListeners
-  for (const key in listeners) {
+  for (const key in listeners) { // 把事件赋值给data
     data[camelize(key)] = listeners[key]
   }
   return data
@@ -81,14 +81,14 @@ export default {
   props: transitionProps,
   abstract: true,
 
-  render (h: Function) {
-    let children: any = this.$slots.default
+  render (h: Function) { // 返回子节点。主要是给子节点的data上添加了transition属性
+    let children: any = this.$slots.default // 获取children
     if (!children) {
       return
     }
 
     // filter out text nodes (possible whitespaces)
-    children = children.filter((c: VNode) => c.tag || isAsyncPlaceholder(c))
+    children = children.filter((c: VNode) => c.tag || isAsyncPlaceholder(c)) // 文本节点过滤
     /* istanbul ignore if */
     if (!children.length) {
       return
@@ -96,7 +96,7 @@ export default {
 
     // warn multiple elements
     if (process.env.NODE_ENV !== 'production' && children.length > 1) {
-      warn(
+      warn( // transition应该只有一个子节点，如果有多个，用transition-group去实现
         '<transition> can only be used on a single element. Use ' +
         '<transition-group> for lists.',
         this.$parent
@@ -108,7 +108,7 @@ export default {
     // warn invalid mode
     if (process.env.NODE_ENV !== 'production' &&
       mode && mode !== 'in-out' && mode !== 'out-in'
-    ) {
+    ) { // mode 只有in-out 和 out-in 两种
       warn(
         'invalid <transition> mode: ' + mode,
         this.$parent
@@ -119,15 +119,15 @@ export default {
 
     // if this is a component root node and the component's
     // parent container node also has transition, skip.
-    if (hasParentTransition(this.$vnode)) {
+    if (hasParentTransition(this.$vnode)) { // 如果transition是组件的根节点，并且组件父节点也是transition，就return第一个子节点
       return rawChild
     }
 
     // apply transition data to child
     // use getRealChild() to ignore abstract components e.g. keep-alive
-    const child: ?VNode = getRealChild(rawChild)
+    const child: ?VNode = getRealChild(rawChild) // 获取真实的vnode，而不是抽象的，比如keep-alive就是抽象的
     /* istanbul ignore if */
-    if (!child) {
+    if (!child) { // 找不到就直接返回当前节点
       return rawChild
     }
 
@@ -138,8 +138,8 @@ export default {
     // ensure a key that is unique to the vnode type and to this transition
     // component instance. This key will be used to remove pending leaving nodes
     // during entering.
-    const id: string = `__transition-${this._uid}-`
-    child.key = child.key == null
+    const id: string = `__transition-${this._uid}-` // 构造一个id
+    child.key = child.key == null // 构造key
       ? child.isComment
         ? id + 'comment'
         : id + child.tag
@@ -147,7 +147,7 @@ export default {
         ? (String(child.key).indexOf(id) === 0 ? child.key : id + child.key)
         : child.key
 
-    const data: Object = (child.data || (child.data = {})).transition = extractTransitionData(this)
+    const data: Object = (child.data || (child.data = {})).transition = extractTransitionData(this) // 给子节点的data创建transition属性，是一个对象，有transition上定义的属性和事件
     const oldRawChild: VNode = this._vnode
     const oldChild: VNode = getRealChild(oldRawChild)
 

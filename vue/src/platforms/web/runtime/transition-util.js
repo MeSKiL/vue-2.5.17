@@ -5,16 +5,18 @@ import { addClass, removeClass } from './class-util'
 import { remove, extend, cached } from 'shared/util'
 
 export function resolveTransition (def?: string | Object): ?Object {
-  if (!def) {
+  // 扩展默认类名。def定义就用def的
+  // resolveTransition(vnode.data.transition)
+  if (!def) { // 没有transition直接return
     return
   }
   /* istanbul ignore else */
   if (typeof def === 'object') {
     const res = {}
-    if (def.css !== false) {
+    if (def.css !== false) { // 如果def的css不为false，就扩展autoCssTransition的返回值，根据name为前缀，如果不定义就是v为前缀。
       extend(res, autoCssTransition(def.name || 'v'))
     }
-    extend(res, def)
+    extend(res, def) // 默认扩展了6个类名，但是如果定义中已经包含了这些名称，就用定义的覆盖默认的。
     return res
   } else if (typeof def === 'string') {
     return autoCssTransition(def)
@@ -121,6 +123,7 @@ export function getTransitionInfo (el: Element, expectedType?: ?string): {
   timeout: number;
   hasTransform: boolean;
 } {
+    // 用来判断是否有动画的属性
   const styles: any = window.getComputedStyle(el)
   const transitionDelays: Array<string> = styles[transitionProp + 'Delay'].split(', ')
   const transitionDurations: Array<string> = styles[transitionProp + 'Duration'].split(', ')

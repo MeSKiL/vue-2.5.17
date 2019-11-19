@@ -1,56 +1,17 @@
-/* @flow */
+##transition-group
+transition-group也是web平台下的组件。他有transition的props，以及新增了moveClass和tag。先来说render。
 
-// Provides transition support for list items.
-// supports move transitions using the FLIP technique.
+render中先获取到tag，然后创建map，prevChildren是上次的children。rawChildren是这次的children。children设置为空。
+然后提取transition是属性和事件。赋值给transitionData。
+之后就是遍历现在的节点。如果没有key就警告，没问题就往map和children里塞。
 
-// Because the vdom's children update algorithm is "unstable" - i.e.
-// it doesn't guarantee the relative positioning of removed elements,
-// we force transition-group to update its children into two passes:
-// in the first pass, we remove all nodes that need to be removed,
-// triggering their leaving transition; in the second pass, we insert/move
-// into the final desired state. This way in the second pass removed
-// nodes will remain where they should be.
+如果原先节点有值(更新的流程)，就会记录旧节点的位置，然后如果在map里有，就说明是先后两次都要渲染的节点。就塞到kept里去。
+增加节点的情况的话，kept和prevChildren是一样的。
+如果不在map里就说明要删除，就塞到removed里去。
+然后把kept生成vnode节点。
 
-import { warn, extend } from 'core/util/index'
-import { addClass, removeClass } from '../class-util'
-import { transitionProps, extractTransitionData } from './transition'
-
-import {
-  hasTransition,
-  getTransitionInfo,
-  transitionEndEvent,
-  addTransitionClass,
-  removeTransitionClass
-} from '../transition-util'
-
-const props = extend({
-  tag: String,
-  moveClass: String
-}, transitionProps) // 在transitionProps的基础上扩展了props和moveClass
-
-delete props.mode
-
-export default {
-  props,
-
-  beforeMount () {
-    const update = this._update
-    this._update = (vnode, hydrating) => { // 重写了_update，作为参数传入。
-      // force removing pass
-      this.__patch__( // 重写了update方法，其实就是会有两次patch过程
-        this._vnode,
-        this.kept,
-        false, // hydrating
-        true // removeOnly (!important, avoids unnecessary moves)
-      )
-      this._vnode = this.kept
-      // 子节点的更新算法是不稳定的，不能保证移除节点的相对位置
-      // 会先删除需要删除的节点，然后插入或者移动节点的位置。这样就会在合理的位置了。
-      // 如果6个删成4个，位置就崩了，先删成4个，再去调位置就对了
-      update.call(this, vnode, hydrating)
-    }
-  },
-
+最后生成tag的vnode返回。
+```javascript 1.6
   render (h: Function) {
     const tag: string = this.tag || this.$vnode.data.tag || 'span' // 生成一个具体节点。没有tag就去span
     const map: Object = Object.create(null)
@@ -93,12 +54,47 @@ export default {
     }
 
     return h(tag, null, children) // 返回createElement函数的调用。
-  },
+  }
+```
+会在beforeMount重写update方法。初始化用不到，就不说了。
 
+然后看更新流程。
+同样会走到render，塞children和map的流程还是一样的，在prevChildren的时候就不一样了，就会有刚刚说的kept和removed了。
+然后走到this._update。这个方法会先走一遍patch，在执行原本的update。因为子节点的更新算法不稳定，不能保证节点的相对位置。
+先把节点的位置确定了，再去修改位置就不会有问题了。
+
+```javascript 1.6
+    this._update = (vnode, hydrating) => { // 重写了_update，作为参数传入。
+      // force removing pass
+      this.__patch__( // 重写了update方法，其实就是会有两次patch过程
+        this._vnode,
+        this.kept,
+        false, // hydrating
+        true // removeOnly (!important, avoids unnecessary moves)
+      )
+      this._vnode = this.kept
+      // 子节点的更新算法是不稳定的，不能保证移除节点的相对位置
+      // 会先删除需要删除的节点，然后插入或者移动节点的位置。这样就会在合理的位置了。
+      // 如果6个删成4个，位置就崩了，先删成4个，再去调位置就对了
+      update.call(this, vnode, hydrating)
+    }
+```
+
+这之后会执行updated钩子。这就是关键过程了。
+这个方法就是用来给prevChildren换位置的。
+先看有没有moveClass并且class是否与动画相关。是通过创建节点，看有没有动画，删除节点实现的。
+如果不满足hasMove就return。
+
+之后是三个遍历。
+第一个是因为过渡是异步的，如果第一个还没执行完，就调用下一个的话，就会把上一个的callback给执行了。
+第二个是记录节点的新位置。
+第三个是获取节点的就位置和新位置，并且把节点放回旧位置。这个时候获取offsetHeight，触发浏览器重绘（新版chrome好像以及不需要了）。
+然后把要偏移的元素加上moveClass，然后去掉他的transform，就触发了偏移更新，然后在更新完成后删除moveClass。
+```javascript 1.6
   updated () { // 更新数据的时候触发updated
     const children: Array<VNode> = this.prevChildren
     const moveClass: string = this.moveClass || ((this.name || 'v') + '-move') // 传了moveClass就用moveClass。没传就默认的
-    if (!children.length || !this.hasMove(children[0].elm, moveClass)) { // 如果没有定义moveClass。或者class的属性是否与class相关。没有moveClass或者没有都return
+    if (!children.length || !this.hasMove(children[0].elm, moveClass)) { // 如果没有定义moveClass。或者class的属性是否与动画相关。没有moveClass或者没有都return
       return
     }
     // 如果确实与缓动相关，就执行下面的逻辑
@@ -128,61 +124,6 @@ export default {
         })
       }
     })
-  },
-
-  methods: {
-    hasMove (el: any, moveClass: string): boolean {
-      /* istanbul ignore if */
-      if (!hasTransition) {
-        return false
-      }
-      /* istanbul ignore if */
-      if (this._hasMove) { // 保留检测结果，以后不用重新检测了。
-        return this._hasMove
-      }
-      // Detect whether an element with the move class applied has
-      // CSS transitions. Since the element may be inside an entering
-      // transition at this very moment, we make a clone of it and remove
-      // all other transition classes applied to ensure only the move class
-      // is applied.
-      const clone: HTMLElement = el.cloneNode() // 先克隆一下，把原有 有_transitionClasses的class上的class都删了
-      if (el._transitionClasses) {
-        el._transitionClasses.forEach((cls: string) => { removeClass(clone, cls) })
-      }
-      addClass(clone, moveClass)
-      clone.style.display = 'none' // 不影响渲染
-      this.$el.appendChild(clone)
-      const info: Object = getTransitionInfo(clone) // 看有没有transition
-      this.$el.removeChild(clone)
-      return (this._hasMove = info.hasTransform) // 判断是否有动画属性
-    }
   }
-}
-
-function callPendingCbs (c: VNode) {
-  /* istanbul ignore if */
-  if (c.elm._moveCb) {
-    c.elm._moveCb()
-  }
-  /* istanbul ignore if */
-  if (c.elm._enterCb) {
-    c.elm._enterCb()
-  }
-}
-
-function recordPosition (c: VNode) {
-  c.data.newPos = c.elm.getBoundingClientRect()
-}
-
-function applyTranslation (c: VNode) {
-  const oldPos = c.data.pos
-  const newPos = c.data.newPos
-  const dx = oldPos.left - newPos.left
-  const dy = oldPos.top - newPos.top
-  if (dx || dy) {
-    c.data.moved = true
-    const s = c.elm.style
-    s.transform = s.WebkitTransform = `translate(${dx}px,${dy}px)`
-    s.transitionDuration = '0s'
-  }
-}
+```
+transition-group的实现主要是通过计算需要偏移的节点的偏移位置，并且通过moveClass去偏移。

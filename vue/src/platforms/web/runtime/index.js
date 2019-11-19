@@ -28,7 +28,7 @@ Vue.config.isUnknownElement = isUnknownElement
 
 // install platform runtime directives & components
 extend(Vue.options.directives, platformDirectives) // Vue.options.directives 扩展了platformDirectives
-extend(Vue.options.components, platformComponents)
+extend(Vue.options.components, platformComponents) // 扩展transition,transitionGroup
 
 // install platform patch function
 Vue.prototype.__patch__ = inBrowser ? patch : noop // 浏览器环境才有patch,服务端没有dom所以patch是空函数
