@@ -30,6 +30,7 @@ Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
+  // 重写了$mount方法，如有没有render方法，就说明使用了模板，就对template进行编译，然后执行原有的$mount方法。
   el = el && query(el) // el现在的dom对象
 
   /* istanbul ignore if */

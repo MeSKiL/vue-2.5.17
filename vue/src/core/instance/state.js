@@ -52,8 +52,8 @@ export function proxy (target: Object, sourceKey: string, key: string) {
 export function initState (vm: Component) {
   vm._watchers = []
   const opts = vm.$options
-  if (opts.props) initProps(vm, opts.props) // 有props就初始化props
-  if (opts.methods) initMethods(vm, opts.methods) // 有methods就初始化methods
+  if (opts.props) initProps(vm, opts.props) // 有props就初始化props，变成响应式，代理到this上
+  if (opts.methods) initMethods(vm, opts.methods) // 有methods就初始化methods，代理到this上，并且不能与props的key重复
   if (opts.data) { // 如果有data就初始化data，没有就初始化空
     initData(vm)
   } else {
@@ -172,8 +172,9 @@ export function getData (data: Function, vm: Component): any {
 const computedWatcherOptions = { computed: true }
 
 function initComputed (vm: Component, computed: Object) { // initState里执行
-  // computed的dep里也是有渲染watcher的。并且computed也有自己的watcher监听自己依赖的属性。依赖的属性变化的话就会执行computed watcher 的update。如果没有渲染watcher在监听这个computed直接就过了。反正也没人管我。如果有渲染你watcher在监听我。
-  // 就会走getAndInvoke 并且传入更新渲染watcher的回调函数。在getAndInvoke中。计算新的computed值，如果没变就不执行回调，反正也没变，没必要重新渲染。变化了就重新渲染，然后得到新的computed值。
+  // computed watcher 的 dep里也是有watcher的。也就是有人监听computed。
+  // 并且computed也有自己的watcher监听自己依赖的属性。依赖的属性变化的话就会执行computed watcher 的update。如果没有watcher在监听这个computed直接就过了。反正也没人管我。如果有watcher在监听我。
+  // 就会走getAndInvoke 并且传入更新watcher的回调函数。在getAndInvoke中。计算新的computed值，如果没变就不执行回调，反正也没变，没必要重新渲染。变化了就重新渲染，然后得到新的computed值。
   // $flow-disable-line
   const watchers = vm._computedWatchers = Object.create(null) // 先缓存了computedWatchers
   // computed properties are just getters during SSR
@@ -181,7 +182,7 @@ function initComputed (vm: Component, computed: Object) { // initState里执行
 
   for (const key in computed) { // 遍历计算属性
     const userDef = computed[key] // userDef是计算属性的值,通常是函数，也可以是对象,如果是对象必须有get属性
-    const getter = typeof userDef === 'function' ? userDef : userDef.get // 通过getter得到计算属性的结果
+    const getter = typeof userDef === 'function' ? userDef : userDef.get // 通过getter得到计算属性的方法
     if (process.env.NODE_ENV !== 'production' && getter == null) { // 如果没有getter就会警告
       warn(
         `Getter is missing for computed property "${key}".`,
@@ -192,8 +193,9 @@ function initComputed (vm: Component, computed: Object) { // initState里执行
     if (!isSSR) {
       // create internal watcher for the computed property.
       watchers[key] = new Watcher( // 实例化watcher
+          // 也就是说computed watcher监听的属性变化了以后，触发了computed watcher的update，就会重新对computed求值，然后如果发生改变，就触发监听computed watcher 的watcher。
         vm,
-        getter || noop, // getter就是computed的结果
+        getter || noop, // getter就是computed的方法
         noop, // computed的watcher主要还是用来渲染的，所以回调是noop
         computedWatcherOptions
       )
@@ -219,6 +221,7 @@ export function defineComputed ( // initComputed中执行
   key: string,
   userDef: Object | Function
 ) {
+  // 在访问computed的key的时候，会返回计算后的结果。并且添加渲染watcher进入dep中，。如果computed watcher发生了update(就说明computed watcher监听的属性变化了)就判断computed的结果是否发生改变，改变了就触发渲染watcher
   const shouldCache = !isServerRendering()
   // shouldCache true
   if (typeof userDef === 'function') { // 如果计算属性是函数的话
@@ -228,7 +231,8 @@ export function defineComputed ( // initComputed中执行
     //   get: noop,
     //   set: noop
     // }
-    sharedPropertyDefinition.get = shouldCache // 当访问computed的值的时候会执行对应的get方法,如果是函数就是createComputedGetter(key)的返回值
+    sharedPropertyDefinition.get = shouldCache // 当访问computed的值的时候会执行对应的get方法,如果是函数就是createComputedGetter(key)的返回值。也就是computed方法执行后的结果。
+        // 拿到结果的同时，在computed watcher的dep里添加当前的渲染watcher。当computed监听的值改变以后，就会触发computed的update方法。如果判断有watcher监听computed，就会在
         // render的时候访问
       ? createComputedGetter(key)
       : userDef
@@ -259,7 +263,7 @@ function createComputedGetter (key) { // 在render的过程中访问到computed�
   return function computedGetter () {
     const watcher = this._computedWatchers && this._computedWatchers[key]
     if (watcher) {
-      watcher.depend() // 添加渲染watcher 的依赖收集
+      watcher.depend() // 给computed watcher的dep里收集依赖
       return watcher.evaluate() // 返回computed的值
     }
   }

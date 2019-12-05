@@ -202,7 +202,7 @@ export function mountComponent ( // 定义了updateComponent函数
   } else {
     updateComponent = () => { // 这个方法是一个渲染watcher 实际上就是执行了一次渲染，除了首次，更新数据都会触发watch，就会执行
       // updateComponent就是vm._update,第一个参数是vm._render()后生成的vm，hydrating csr为false
-      vm._update(vm._render(), hydrating)
+      vm._update(vm._render(), hydrating) // vm._render()就是吧实例渲染成vnode ，就是将vm转换为vnode的过程
     }
   }
 
@@ -210,7 +210,8 @@ export function mountComponent ( // 定义了updateComponent函数
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
   new Watcher(vm, updateComponent, noop, { // 渲染watcher
-    // todo 监听当更新的时候先调用before然后执行updateComponent更新，new的时候并没有走before。new的时候也不该走before
+    // 监听当更新的时候先调用before然后执行updateComponent更新，new的时候并没有走before。new的时候也不该走before
+    // new的时候会走get，也就是执行了updateComponent方法。也就是执行了render和patch
     before () {
       if (vm._isMounted) { // 如果已经挂载好了(不是第一次)就执行beforeUpdate
         callHook(vm, 'beforeUpdate')

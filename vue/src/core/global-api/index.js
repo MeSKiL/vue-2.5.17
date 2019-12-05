@@ -59,7 +59,7 @@ export function initGlobalAPI(Vue: GlobalAPI) { // 给vue增加了各种api
 
     extend(Vue.options.components, builtInComponents) // 将keep-alive扩展到components下
 
-    initUse(Vue) // 定义Vue.init
+    initUse(Vue) // 定义Vue.use
     initMixin(Vue) // Vue.mixin
     initExtend(Vue) // Vue.extend
 

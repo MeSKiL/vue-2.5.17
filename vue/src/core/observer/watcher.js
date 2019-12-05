@@ -114,7 +114,7 @@ export default class Watcher {
     }
     if (this.computed) { // 如果是computed属性，创建过程中不会求值 this.value为空值，并且初始化一个dep
       this.value = undefined
-      this.dep = new Dep() // computed也有自己的dep
+      this.dep = new Dep() // computed watcher有自己的dep
     } else {
       // 渲染watcher和user watcher上会执行get求值
       this.value = this.get()
@@ -273,7 +273,7 @@ export default class Watcher {
   /**
    * Depend on this watcher. Only for computed property watchers.
    */
-  depend () { // 给computed的dep里添加依赖watcher
+  depend () { // 给computed的dep的sub里添加依赖watcher，给依赖watcher里添加这个dep
     if (this.dep && Dep.target) {
       this.dep.depend()
     }

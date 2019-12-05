@@ -175,7 +175,8 @@ export function defineReactive ( // 把对象的属性变成响应式的,其实�
           //    a:1
           //  }
           // }
-          // 如果不把watcher与子属性互相依赖，之后set msg 的时候走msg.dep.notify的时候,是不会触发渲染watcher的 todo
+          // 给响应式对象添加新属性的时候，由于新属性不是响应式的，所以不会触发notify的，就要手动触发notify，于是就将dep存在对象的._ob_.dep中。
+          // 其实obj.__ob__.dep和obj.dep是一样的。obj.__ob__.dep的作用就是为了给set的时候主动触发notify用的。
           childOb.dep.depend() //
           if (Array.isArray(value)) {
             dependArray(value)

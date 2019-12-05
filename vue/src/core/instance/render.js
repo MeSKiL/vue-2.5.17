@@ -15,14 +15,14 @@ import VNode, { createEmptyVNode } from '../vdom/vnode'
 
 import { isUpdatingChildComponent } from './lifecycle'
 
-export function initRender (vm: Component) { // initRender再_init的时候执行了
+export function initRender (vm: Component) { // initRender在_init的时候执行了
   vm._vnode = null // the root of the child tree
   vm._staticTrees = null // v-once cached trees
   const options = vm.$options
   const parentVnode = vm.$vnode = options._parentVnode // the placeholder node in parent tree
   const renderContext = parentVnode && parentVnode.context
-  vm.$slots = resolveSlots(options._renderChildren, renderContext)
-  vm.$scopedSlots = emptyObject
+  vm.$slots = resolveSlots(options._renderChildren, renderContext) // 拿$slots，在options._renderChildren里拿，options在_init，initRender之前合并的
+  vm.$scopedSlots = emptyObject // 初始化$scopedSlot
   // bind the createElement fn to this instance
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
@@ -63,6 +63,7 @@ export function renderMixin (Vue: Class<Component>) { // instance/index
   }
 
   Vue.prototype._render = function (): VNode {
+    // 其实主要就是调用了createElement方法生成vnode
     const vm: Component = this
     const { render, _parentVnode } = vm.$options // 从$options拿到render
 

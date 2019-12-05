@@ -137,7 +137,7 @@ export function createPatchFunction(backend) {
 
     let creatingElmInVPre = 0
 
-    function createElm(
+    function createElm( // 将vnode转换成真实的dom挂载，会遍历子节点调用createElm。就是先递归挂载子节点，后挂父节点。
         vnode,
         insertedVnodeQueue,
         parentElm,
@@ -798,7 +798,7 @@ export function createPatchFunction(backend) {
                     }
                     // either not server-rendered, or hydration failed.
                     // create an empty node and replace it
-                    oldVnode = emptyNodeAt(oldVnode) // 将真实dom oldVnode转换成vnode，并且vnode.elm可以访问到真实的dom
+                    oldVnode = emptyNodeAt(oldVnode) // 将真实dom oldVnode转换成vnode，并且vnode.elm可以访问到真实的dom，之后再通过createElm生成真实的节点
 
                     // return new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)
                     // 通过emptyNodeAt(oldVnode)，可以通过elm访问到真实的dom

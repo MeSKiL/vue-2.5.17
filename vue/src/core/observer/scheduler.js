@@ -144,7 +144,7 @@ export function queueWatcher (watcher: Watcher) { // 在watch的update中执行�
     has[id] = true
     if (!flushing) { // 如果flushing是false，直接往队列里加就行了。
       // 同一个tick内就会push一次到一个队列里
-      queue.push(watcher) // 把watcher push到队列里面,比如同时更新了多个数据，但是订阅者都是一个watcher todo 一次set了多个data，这些watcher会在nextTick一起flushSchedulerQueue。有没有可能在nexttick的时候，这个方法里的data还没变完，是不是就在下一个tick执行了
+      queue.push(watcher) // 把watcher push到队列里面,比如同时更新了多个数据，但是订阅者都是一个watcher
     } else { // 如果在flushSchedulerQueue后又进来了,也就是说在run的时候，又set了 a ，就会又执行 a 的各个watcher的update，就又进来了。如果监听a的watcher不在queue里就插入到queue里去。
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.

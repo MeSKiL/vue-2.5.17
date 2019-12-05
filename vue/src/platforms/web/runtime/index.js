@@ -28,6 +28,7 @@ Vue.config.isUnknownElement = isUnknownElement
 
 // install platform runtime directives & components
 extend(Vue.options.directives, platformDirectives) // Vue.options.directives 扩展了platformDirectives
+// model和show
 extend(Vue.options.components, platformComponents) // 扩展transition,transitionGroup
 
 // install platform patch function

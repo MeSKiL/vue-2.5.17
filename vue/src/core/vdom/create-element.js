@@ -34,7 +34,7 @@ const ALWAYS_NORMALIZE = 2
 //     },
 //   }, this.message)
 // }
-export function createElement ( // 在initRender中vm.$createElement为createElement方法
+export function createElement ( // 在initRender中vm.$createElement为createElement方法,对_createElement的封装
   context: Component, // vm
   tag: any, // div
   data: any, // {}
@@ -55,10 +55,10 @@ export function createElement ( // 在initRender中vm.$createElement为createEle
 }
 
 // _createElement(context, tag, data, children, normalizationType)
-export function _createElement ( // 在createElement中执行
+export function _createElement ( // 在createElement中执行，真正的创建vnode
   context: Component,
   tag?: string | Class<Component> | Function | Object,
-  data?: VNodeData,
+  data?: VNodeData, // vnode的属性
   children?: any,
   normalizationType?: number
 ): VNode | Array<VNode> {
@@ -99,10 +99,10 @@ export function _createElement ( // 在createElement中执行
     children.length = 0
   }
   // 手写的render 是ALWAYS_NORMALIZE
-  if (normalizationType === ALWAYS_NORMALIZE) { // 对children做normalize
+  if (normalizationType === ALWAYS_NORMALIZE) { // 对children做normalize，拍平成一个数组
     children = normalizeChildren(children) // 手动的不确保是什么数据结构，就normalizeChildren todo
   } else if (normalizationType === SIMPLE_NORMALIZE) { // 自动编译的是SIMPLE_NORMALIZE,所以就调用simpleNormalizeChildren
-    children = simpleNormalizeChildren(children)
+    children = simpleNormalizeChildren(children) // 把children拍平
   }
   let vnode, ns
   if (typeof tag === 'string') {
@@ -116,10 +116,11 @@ export function _createElement ( // 在createElement中执行
         undefined, undefined, context
       )
     } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) { // 没找到就进else
+      // 找注册过的组件
       // 局部组件返回的是一个对象，全局组件返回的是一个构造器
       // component
       // 如果是组件就创建组件
-      vnode = createComponent(Ctor, data, context, children, tag)
+      vnode = createComponent(Ctor, data, context, children, tag) // 创建组件vnode
     } else {
       // unknown or unlisted namespaced elements
       // check at runtime because it may get assigned a namespace when its

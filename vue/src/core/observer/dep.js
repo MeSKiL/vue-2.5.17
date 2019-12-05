@@ -28,6 +28,8 @@ export default class Dep { // 建立数据与watcher之间的桥梁 dep的target
   }
 
   depend () { // 调用watcher的addDep方法
+    // 给此刻的watcher的dep里增加这个dep
+    // 给这个dep里增加此刻的watcher
     if (Dep.target) {
       Dep.target.addDep(this) // 调用当前的watcher的addDep，传入该数据的dep实例
     }
